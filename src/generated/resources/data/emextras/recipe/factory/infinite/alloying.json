@@ -2,21 +2,11 @@
   "type": "mekanism:mek_data",
   "category": "misc",
   "key": {
-    "#": {
-      "tag": "c:pellets/plutonium"
-    },
-    "?": {
-      "tag": "c:pellets/polonium"
-    },
-    "A": {
-      "tag": "mekanism_extras:alloys/spectrum"
-    },
-    "C": {
-      "tag": "c:circuits/infinite"
-    },
-    "P": {
-      "item": "emextras:cosmic_alloying_factory"
-    }
+    "#": "#c:pellets/plutonium",
+    "?": "#c:pellets/polonium",
+    "A": "#mekanism_extras:alloys/spectrum",
+    "C": "#c:circuits/infinite",
+    "P": "emextras:cosmic_alloying_factory"
   },
   "pattern": [
     "ACA",

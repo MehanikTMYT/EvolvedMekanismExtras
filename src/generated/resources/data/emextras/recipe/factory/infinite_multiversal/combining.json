@@ -2,24 +2,12 @@
   "type": "mekanism:mek_data",
   "category": "misc",
   "key": {
-    "A": {
-      "tag": "mekanism_extras:alloys/spectrum"
-    },
-    "C": {
-      "tag": "c:circuits/infinite_multiversal"
-    },
-    "P": {
-      "item": "mekanism_extras:infinite_combining_factory"
-    },
-    "Q": {
-      "item": "evolvedmekanism:multiversal_combining_factory"
-    },
-    "T": {
-      "tag": "evolvedmekanism:alloys/exoversal"
-    },
-    "X": {
-      "item": "mekanism:steel_casing"
-    }
+    "A": "#mekanism_extras:alloys/spectrum",
+    "C": "#c:circuits/infinite_multiversal",
+    "P": "mekanism_extras:infinite_combining_factory",
+    "Q": "evolvedmekanism:multiversal_combining_factory",
+    "T": "#evolvedmekanism:alloys/exoversal",
+    "X": "mekanism:steel_casing"
   },
   "pattern": [
     "ACT",

@@ -1,12 +1,12 @@
 {
   "type": "mekanism:combining",
   "extra_input": {
-    "count": 4,
-    "item": "mekanism:hdpe_sheet"
+    "ingredient": "mekanism:hdpe_sheet",
+    "count": 4
   },
   "main_input": {
-    "count": 1,
-    "tag": "c:circuits/basic"
+    "ingredient": "#c:circuits/basic",
+    "count": 1
   },
   "output": {
     "count": 1,

@@ -2,24 +2,12 @@
   "type": "mekanism:mek_data",
   "category": "misc",
   "key": {
-    "A": {
-      "tag": "mekanism_extras:alloys/thermonuclear"
-    },
-    "C": {
-      "tag": "c:circuits/supreme_quantum"
-    },
-    "P": {
-      "item": "mekanism_extras:supreme_washing_factory"
-    },
-    "Q": {
-      "item": "mekmm:quantum_washing_factory"
-    },
-    "T": {
-      "tag": "evolvedmekanism:alloys/subatomic"
-    },
-    "X": {
-      "item": "mekanism:steel_casing"
-    }
+    "A": "#mekanism_extras:alloys/thermonuclear",
+    "C": "#c:circuits/supreme_quantum",
+    "P": "mekanism_extras:supreme_washing_factory",
+    "Q": "mekmm:quantum_washing_factory",
+    "T": "#evolvedmekanism:alloys/subatomic",
+    "X": "mekanism:steel_casing"
   },
   "pattern": [
     "ACT",

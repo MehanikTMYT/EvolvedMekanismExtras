@@ -2,18 +2,10 @@
   "type": "mekanism:mek_data",
   "category": "misc",
   "key": {
-    "#": {
-      "tag": "c:ingots/refined_obsidian"
-    },
-    "A": {
-      "tag": "mekanism_extras:alloys/shining"
-    },
-    "C": {
-      "tag": "c:circuits/cosmic"
-    },
-    "P": {
-      "item": "emextras:supreme_alloying_factory"
-    }
+    "#": "#c:ingots/refined_obsidian",
+    "A": "#mekanism_extras:alloys/shining",
+    "C": "#c:circuits/cosmic",
+    "P": "emextras:supreme_alloying_factory"
   },
   "pattern": [
     "ACA",

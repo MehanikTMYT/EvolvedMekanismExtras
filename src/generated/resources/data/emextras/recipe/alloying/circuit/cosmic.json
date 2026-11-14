@@ -1,19 +1,19 @@
 {
   "type": "evolvedmekanism:alloying",
   "extra_input": {
-    "count": 1,
-    "tag": "c:circuits/supreme"
+    "ingredient": "#c:circuits/supreme",
+    "count": 1
   },
   "main_input": {
-    "count": 2,
-    "tag": "mekanism_extras:alloys/shining"
+    "ingredient": "#mekanism_extras:alloys/shining",
+    "count": 2
   },
   "output": {
     "count": 2,
     "id": "mekanism_extras:cosmic_control_circuit"
   },
   "second_extra_input": {
-    "count": 1,
-    "item": "emextras:base_control_circuit"
+    "ingredient": "emextras:base_control_circuit",
+    "count": 1
   }
 }

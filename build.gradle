@@ -105,6 +105,10 @@ dependencies {
     compileOnly files("../../work/evolved-mekanism-extras-26.1.2/dep-libs/mekanism_extras-26.1.2-1.4.2-fix7-atm11-0.9.0.jar")
     // Mekanism MoreMachine (modId mekmm) + пакет com.jerry.mekaf — из одного дерева mekanism-stack/Mekanism-MoreMachine
     compileOnly files("../../work/evolved-mekanism-extras-26.1.2/dep-libs/mekmm-2.0.0-26.1.2.jar")
+    // server smoke: обязательные моды и mekaf-интеграция должны загружаться и в dev-runtime.
+    runtimeOnly files("../../work/evolved-mekanism-extras-26.1.2/dep-libs/evolvedmekanism-26.1.2.jar")
+    runtimeOnly files("../../work/evolved-mekanism-extras-26.1.2/dep-libs/mekanism_extras-26.1.2-1.4.2-fix7-atm11-0.9.0.jar")
+    runtimeOnly files("../../work/evolved-mekanism-extras-26.1.2/dep-libs/mekmm-2.0.0-26.1.2.jar")
     // MTO (modId mekanismtieredoutlines) — только для миксина MixinMTOModClient
     compileOnly files("../../work/evolved-mekanism-extras-26.1.2/dep-libs/mekanism-tiered-outlines-mto-0.1.0.jar")
 

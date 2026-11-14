@@ -2,18 +2,10 @@
   "type": "mekanism:mek_data",
   "category": "misc",
   "key": {
-    "#": {
-      "tag": "c:gems/emerald"
-    },
-    "A": {
-      "tag": "mekanism_extras:alloys/radiance"
-    },
-    "C": {
-      "tag": "c:circuits/absolute"
-    },
-    "P": {
-      "item": "evolvedmekanism:ultimate_alloying_factory"
-    }
+    "#": "#c:gems/emerald",
+    "A": "#mekanism_extras:alloys/radiance",
+    "C": "#c:circuits/absolute",
+    "P": "evolvedmekanism:ultimate_alloying_factory"
   },
   "pattern": [
     "ACA",

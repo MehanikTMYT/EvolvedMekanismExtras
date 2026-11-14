@@ -1,19 +1,19 @@
 {
   "type": "evolvedmekanism:alloying",
   "extra_input": {
-    "count": 1,
-    "tag": "c:circuits/multiversal"
+    "ingredient": "#c:circuits/multiversal",
+    "count": 1
   },
   "main_input": {
-    "count": 2,
-    "tag": "evolvedmekanism:alloys/creative"
+    "ingredient": "#evolvedmekanism:alloys/creative",
+    "count": 2
   },
   "output": {
     "count": 2,
     "id": "evolvedmekanism:creative_control_circuit"
   },
   "second_extra_input": {
-    "count": 1,
-    "item": "emextras:base_control_circuit"
+    "ingredient": "emextras:base_control_circuit",
+    "count": 1
   }
 }

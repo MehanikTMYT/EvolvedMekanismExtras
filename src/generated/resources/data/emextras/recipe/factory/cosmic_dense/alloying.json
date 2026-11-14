@@ -2,24 +2,12 @@
   "type": "mekanism:mek_data",
   "category": "misc",
   "key": {
-    "A": {
-      "tag": "mekanism_extras:alloys/shining"
-    },
-    "C": {
-      "tag": "c:circuits/cosmic_dense"
-    },
-    "P": {
-      "item": "emextras:cosmic_alloying_factory"
-    },
-    "Q": {
-      "item": "evolvedmekanism:dense_alloying_factory"
-    },
-    "T": {
-      "tag": "evolvedmekanism:alloys/singular"
-    },
-    "X": {
-      "item": "mekanism:steel_casing"
-    }
+    "A": "#mekanism_extras:alloys/shining",
+    "C": "#c:circuits/cosmic_dense",
+    "P": "emextras:cosmic_alloying_factory",
+    "Q": "evolvedmekanism:dense_alloying_factory",
+    "T": "#evolvedmekanism:alloys/singular",
+    "X": "mekanism:steel_casing"
   },
   "pattern": [
     "ACT",

@@ -1,19 +1,19 @@
 {
   "type": "evolvedmekanism:alloying",
   "extra_input": {
-    "count": 1,
-    "tag": "c:circuits/absolute"
+    "ingredient": "#c:circuits/absolute",
+    "count": 1
   },
   "main_input": {
-    "count": 2,
-    "item": "emextras:base_control_circuit"
+    "ingredient": "emextras:base_control_circuit",
+    "count": 2
   },
   "output": {
     "count": 2,
     "id": "emextras:absolute_overclocked_control_circuit"
   },
   "second_extra_input": {
-    "count": 1,
-    "tag": "c:circuits/overclocked"
+    "ingredient": "#c:circuits/overclocked",
+    "count": 1
   }
 }
