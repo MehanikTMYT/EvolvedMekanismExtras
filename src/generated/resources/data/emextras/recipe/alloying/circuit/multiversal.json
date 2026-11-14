@@ -1,19 +1,19 @@
 {
   "type": "evolvedmekanism:alloying",
   "extra_input": {
-    "ingredient": "#c:circuits/dense",
-    "count": 1
+    "count": 1,
+    "ingredient": "#c:circuits/dense"
   },
   "main_input": {
-    "ingredient": "#evolvedmekanism:alloys/exoversal",
-    "count": 2
+    "count": 2,
+    "ingredient": "#evolvedmekanism:alloys/exoversal"
   },
   "output": {
     "count": 2,
     "id": "evolvedmekanism:multiversal_control_circuit"
   },
   "second_extra_input": {
-    "ingredient": "emextras:base_control_circuit",
-    "count": 1
+    "count": 1,
+    "ingredient": "emextras:base_control_circuit"
   }
 }

@@ -5,11 +5,10 @@ import it.unimi.dsi.fastutil.chars.Char2ObjectArrayMap;
 import it.unimi.dsi.fastutil.chars.Char2ObjectMap;
 import it.unimi.dsi.fastutil.chars.CharOpenHashSet;
 import it.unimi.dsi.fastutil.chars.CharSet;
-import mekanism.api.annotations.NothingNullByDefault;
 import mekanism.common.registration.impl.BlockRegistryObject;
 import net.minecraft.core.Holder;
 import net.minecraft.data.recipes.RecipeBuilder;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -21,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-@NothingNullByDefault
 public class ExtendedShapedRecipeBuilder extends BaseRecipeBuilder<ExtendedShapedRecipeBuilder> {
 
     private final Char2ObjectMap<Ingredient> key = new Char2ObjectArrayMap<>(9);
@@ -63,7 +61,7 @@ public class ExtendedShapedRecipeBuilder extends BaseRecipeBuilder<ExtendedShape
     }
 
     public ExtendedShapedRecipeBuilder key(char symbol, TagKey<Item> tag) {
-        return key(symbol, Ingredient.of(tag));
+        return key(symbol, io.github.masyumero.emextras.datagen.common.recipe.BaseRecipeProvider.tagIngredient(tag));
     }
 
     public ExtendedShapedRecipeBuilder key(char symbol, Item item) {
@@ -94,7 +92,7 @@ public class ExtendedShapedRecipeBuilder extends BaseRecipeBuilder<ExtendedShape
     }
 
     @Override
-    protected void validate(ResourceLocation id) {
+    protected void ensureValid(net.minecraft.resources.ResourceKey<Recipe<?>> id) {
         if (pattern.isEmpty()) {
             throw new IllegalStateException("No pattern is defined for shaped recipe " + id + "!");
         }
@@ -119,11 +117,10 @@ public class ExtendedShapedRecipeBuilder extends BaseRecipeBuilder<ExtendedShape
     @Override
     protected Recipe<?> asRecipe() {
         return wrapRecipe(new ShapedRecipe(
-                Objects.requireNonNullElse(this.group, ""),
-                RecipeBuilder.determineBookCategory(this.category),
-                ShapedRecipePattern.of(this.key, this.pattern),
-                resultStack(),
-                this.showNotification
+                new Recipe.CommonInfo(this.showNotification),
+                new net.minecraft.world.item.crafting.CraftingRecipe.CraftingBookInfo(
+                        RecipeBuilder.determineCraftingBookCategory(this.category), Objects.requireNonNullElse(this.group, "")),
+                ShapedRecipePattern.of(this.key, this.pattern), resultStack()
         ));
     }
 

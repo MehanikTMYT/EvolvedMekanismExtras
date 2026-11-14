@@ -16,8 +16,8 @@ public class CombinerRecipeProvider implements ISubRecipeProvider {
     public void addRecipes(RecipeOutput consumer, HolderLookup.Provider registries) {
         String basePath = "combiner/";
         CombinerRecipeBuilder.combining(
-                IngredientCreatorAccess.item().from(MekanismTags.Items.CIRCUITS_BASIC),
+                IngredientCreatorAccess.item().from(registries.lookupOrThrow(net.minecraft.core.registries.Registries.ITEM), MekanismTags.Items.CIRCUITS_BASIC),
                 IngredientCreatorAccess.item().from(MekanismItems.HDPE_SHEET, 4),
-                EMExtraItems.BASE_CONTROL_CIRCUIT.asStack()).build(consumer, EMExtras.rl(basePath + "base_circuit"));
+                new net.minecraft.world.item.ItemStackTemplate(EMExtraItems.BASE_CONTROL_CIRCUIT)).save(consumer, EMExtras.rl(basePath + "base_circuit"));
     }
 }

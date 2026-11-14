@@ -16,41 +16,68 @@ import mekanism.common.block.attribute.AttributeFactoryType;
 import mekanism.common.content.blocktype.FactoryType;
 import mekanism.common.registration.impl.BlockRegistryObject;
 import net.minecraft.data.PackOutput;
-import net.neoforged.neoforge.client.model.generators.ItemModelBuilder;
-import net.neoforged.neoforge.client.model.generators.ItemModelProvider;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
+import com.google.gson.JsonObject;
+import net.minecraft.resources.Identifier;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.item.Item;
+import io.github.masyumero.emextras.datagen.client.models.BaseAssetProvider;
 
-public abstract class BaseItemModelProvider extends ItemModelProvider {
+public abstract class BaseItemModelProvider extends BaseAssetProvider {
 
-    public BaseItemModelProvider(PackOutput output, String modid, ExistingFileHelper existingFileHelper) {
-        super(output, modid, existingFileHelper);
+    public BaseItemModelProvider(PackOutput output, String modid) {
+        super(output, modid);
     }
 
-    public ItemModelBuilder factoryBlock(BlockRegistryObject<?, ?> blockRO) {
+    protected abstract void registerModels();
+
+    @Override
+    protected final void registerAssets() {
+        registerModels();
+    }
+
+    // port-26.1.2: items/ contains the client item definition, models/item/ the mesh.
+    protected void withExistingParent(String name, Identifier parent) {
+        JsonObject model = reference("type", Identifier.withDefaultNamespace("model"));
+        model.addProperty("model", parent.toString());
+        JsonObject item = new JsonObject();
+        item.add("model", model);
+        asset("items", Identifier.fromNamespaceAndPath(modid, name), item);
+    }
+
+    protected void basicItem(Item item) {
+        Identifier id = BuiltInRegistries.ITEM.getKey(item);
+        Identifier modelId = id.withPrefix("item/");
+        JsonObject mesh = reference("parent", Identifier.withDefaultNamespace("item/generated"));
+        mesh.add("textures", reference("layer0", modelId));
+        asset("models", modelId, mesh);
+        withExistingParent(id.getPath(), modelId);
+    }
+
+    public void factoryBlock(BlockRegistryObject<?, ?> blockRO) {
         FactoryType type = Attribute.get(blockRO, AttributeFactoryType.class).getFactoryType();
         EMExtraFactoryTier tier = EMExtraAttribute.getEMExtraTier(blockRO, EMExtraFactoryTier.class);
 
-        return this.withExistingParent(blockRO.getName(), EMExtras.rl("block/factory/" + type.getRegistryNameComponent() +  "/" + tier.getEMExtraTier().getLowerName()));
+        this.withExistingParent(blockRO.getName(), EMExtras.rl("block/factory/" + type.getRegistryNameComponent() +  "/" + tier.getEMExtraTier().getLowerName()));
     }
 
-    public ItemModelBuilder extraFactoryBlock(BlockRegistryObject<?, ?> blockRO) {
+    public void extraFactoryBlock(BlockRegistryObject<?, ?> blockRO) {
         FactoryType type = Attribute.get(blockRO, AttributeFactoryType.class).getFactoryType();
         ExtraFactoryTier tier = ExtraAttribute.getAdvancedTier(blockRO, ExtraFactoryTier.class);
 
-        return this.withExistingParent(blockRO.getName(), EMExtras.rl("block/factory/" + type.getRegistryNameComponent() +  "/" + tier.getAdvanceTier().getLowerName()));
+        this.withExistingParent(blockRO.getName(), EMExtras.rl("block/factory/" + type.getRegistryNameComponent() +  "/" + tier.getAdvanceTier().getLowerName()));
     }
 
-    public ItemModelBuilder advancedFactoryBlock(BlockRegistryObject<?, ?> blockRO) {
+    public void advancedFactoryBlock(BlockRegistryObject<?, ?> blockRO) {
         AdvancedFactoryType type = Attribute.get(blockRO, AttributeAdvancedFactoryType.class).getAdvancedFactoryType();
         EMExtraFactoryTier tier = EMExtraAttribute.getEMExtraTier(blockRO, EMExtraFactoryTier.class);
 
-        return this.withExistingParent(blockRO.getName(), EMExtras.rl("block/factory/" + type.getRegistryNameComponent() +  "/" + tier.getEMExtraTier().getLowerName()));
+        this.withExistingParent(blockRO.getName(), EMExtras.rl("block/factory/" + type.getRegistryNameComponent() +  "/" + tier.getEMExtraTier().getLowerName()));
     }
 
-    public ItemModelBuilder moreMachineFactoryBlock(BlockRegistryObject<?, ?> blockRO) {
+    public void moreMachineFactoryBlock(BlockRegistryObject<?, ?> blockRO) {
         MoreMachineFactoryType type = Attribute.get(blockRO, MoreMachineAttributeFactoryType.class).getMoreMachineFactoryType();
         EMExtraFactoryTier tier = EMExtraAttribute.getEMExtraTier(blockRO, EMExtraFactoryTier.class);
 
-        return this.withExistingParent(blockRO.getName(), EMExtras.rl("block/factory/" + type.getRegistryNameComponent() +  "/" + tier.getEMExtraTier().getLowerName()));
+        this.withExistingParent(blockRO.getName(), EMExtras.rl("block/factory/" + type.getRegistryNameComponent() +  "/" + tier.getEMExtraTier().getLowerName()));
     }
 }

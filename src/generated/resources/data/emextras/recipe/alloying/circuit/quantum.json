@@ -1,19 +1,19 @@
 {
   "type": "evolvedmekanism:alloying",
   "extra_input": {
-    "ingredient": "#c:circuits/overclocked",
-    "count": 1
+    "count": 1,
+    "ingredient": "#c:circuits/overclocked"
   },
   "main_input": {
-    "ingredient": "#evolvedmekanism:alloys/subatomic",
-    "count": 2
+    "count": 2,
+    "ingredient": "#evolvedmekanism:alloys/subatomic"
   },
   "output": {
     "count": 2,
     "id": "evolvedmekanism:quantum_control_circuit"
   },
   "second_extra_input": {
-    "ingredient": "emextras:base_control_circuit",
-    "count": 1
+    "count": 1,
+    "ingredient": "emextras:base_control_circuit"
   }
 }

@@ -8,10 +8,6 @@
       "parent": "emextras:block/factory/front_led/infinite_multiversal"
     }
   },
-  "item_render_order": [
-    "base",
-    "front_led"
-  ],
   "loader": "neoforge:composite",
   "textures": {
     "particle": "mekanism:block/factory/factory_front_back"

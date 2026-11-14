@@ -8,10 +8,6 @@
       "parent": "mekanism_extras:block/factory/front_led/absolute"
     }
   },
-  "item_render_order": [
-    "base",
-    "front_led"
-  ],
   "loader": "neoforge:composite",
   "textures": {
     "particle": "mekanism:block/factory/factory_front_back"

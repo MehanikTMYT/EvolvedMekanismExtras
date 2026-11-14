@@ -1,19 +1,19 @@
 {
   "type": "evolvedmekanism:alloying",
   "extra_input": {
-    "ingredient": "#c:circuits/cosmic",
-    "count": 1
+    "count": 1,
+    "ingredient": "#c:circuits/cosmic"
   },
   "main_input": {
-    "ingredient": "emextras:base_control_circuit",
-    "count": 2
+    "count": 2,
+    "ingredient": "emextras:base_control_circuit"
   },
   "output": {
     "count": 2,
     "id": "emextras:cosmic_dense_control_circuit"
   },
   "second_extra_input": {
-    "ingredient": "#c:circuits/dense",
-    "count": 1
+    "count": 1,
+    "ingredient": "#c:circuits/dense"
   }
 }

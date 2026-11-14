@@ -1,19 +1,19 @@
 {
   "type": "evolvedmekanism:alloying",
   "extra_input": {
-    "ingredient": "#c:circuits/infinite",
-    "count": 1
+    "count": 1,
+    "ingredient": "#c:circuits/infinite"
   },
   "main_input": {
-    "ingredient": "emextras:base_control_circuit",
-    "count": 2
+    "count": 2,
+    "ingredient": "emextras:base_control_circuit"
   },
   "output": {
     "count": 2,
     "id": "emextras:infinite_multiversal_control_circuit"
   },
   "second_extra_input": {
-    "ingredient": "#c:circuits/multiversal",
-    "count": 1
+    "count": 1,
+    "ingredient": "#c:circuits/multiversal"
   }
 }

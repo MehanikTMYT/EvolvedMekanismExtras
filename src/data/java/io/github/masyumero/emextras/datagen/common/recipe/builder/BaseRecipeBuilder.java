@@ -1,15 +1,12 @@
 package io.github.masyumero.emextras.datagen.common.recipe.builder;
 
-import mekanism.api.annotations.NothingNullByDefault;
 import mekanism.api.datagen.recipe.MekanismRecipeBuilder;
 import net.minecraft.core.Holder;
 import net.minecraft.data.recipes.RecipeCategory;
 import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
-@NothingNullByDefault
 public abstract class BaseRecipeBuilder<BUILDER extends BaseRecipeBuilder<BUILDER>> extends MekanismRecipeBuilder<BUILDER> {
 
     private final Holder<Item> result;
@@ -39,10 +36,15 @@ public abstract class BaseRecipeBuilder<BUILDER extends BaseRecipeBuilder<BUILDE
     }
 
     public void build(RecipeOutput recipeOutput) {
-        build(recipeOutput, result);
+        save(recipeOutput, result);
     }
 
-    protected ItemStack resultStack() {
-        return new ItemStack(result.value(), count);
+    @Override
+    public net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> defaultId() {
+        return net.minecraft.data.recipes.RecipeBuilder.getDefaultRecipeId(resultStack());
+    }
+
+    protected net.minecraft.world.item.ItemStackTemplate resultStack() {
+        return new net.minecraft.world.item.ItemStackTemplate(result, count);
     }
 }

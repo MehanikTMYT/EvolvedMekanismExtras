@@ -37,7 +37,7 @@ import mekanism.common.tier.FactoryTier;
 import mekanism.common.util.EnumUtils;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.recipes.RecipeOutput;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.neoforged.neoforge.common.Tags;
@@ -98,7 +98,7 @@ public class FactoryRecipeProvider implements ISubRecipeProvider {
                 .key(Pattern.CONSTANT, MekanismTags.Items.PELLETS_PLUTONIUM)
                 .key(Pattern.EXTRA_CONSTANT, MekanismTags.Items.PELLETS_POLONIUM)
                 .key(Pattern.PREVIOUS, EMExtraBlocks.getExtraFactory(ExtraFactoryTier.COSMIC, EMFactoryType.ALLOYING))
-                .build(consumer, EMExtras.rl(basePath + "infinite/" + Attribute.getOrThrow(factory, AttributeFactoryType.class).getFactoryType().getRegistryNameComponent()));
+                .save(consumer, EMExtras.rl(basePath + "infinite/" + Attribute.getOrThrow(factory, AttributeFactoryType.class).getFactoryType().getRegistryNameComponent()));
 
         // MoreMachine Factories
         for (MoreMachineFactoryType type : MoreMachineEnumUtils.MM_FACTORY_TYPES) {
@@ -134,12 +134,12 @@ public class FactoryRecipeProvider implements ISubRecipeProvider {
                 .key(Pattern.CIRCUIT, circuitTag)
                 .key(Pattern.CONSTANT, ingotTag)
                 .key(Pattern.PREVIOUS, toUpgrade)
-                .build(consumer, EMExtras.rl(basePath + tier.getAdvanceTier().getLowerName() + "/" + Attribute.getOrThrow(factory, AttributeFactoryType.class).getFactoryType().getRegistryNameComponent()));
+                .save(consumer, EMExtras.rl(basePath + tier.getAdvanceTier().getLowerName() + "/" + Attribute.getOrThrow(factory, AttributeFactoryType.class).getFactoryType().getRegistryNameComponent()));
     }
 
     private void addFactoryRecipes(RecipeOutput consumer, EMExtraFactoryTier tier,
                                    Function<EMExtraFactoryTier, BlockRegistryObject<?, ?>> factory, BlockRegistryObject<?, ?> toExtraUpgrade, BlockRegistryObject<?, ?> toUpgrade,
-                                   TagKey<Item> alloyTag, TagKey<Item> extraAlloyTag, TagKey<Item> circuitTag, ResourceLocation path) {
+                                   TagKey<Item> alloyTag, TagKey<Item> extraAlloyTag, TagKey<Item> circuitTag, Identifier path) {
         MekDataShapedRecipeBuilder.shapedRecipe(factory.apply(tier))
                 .pattern(EMEXTRA_FACTORY_PATTERN)
                 .key(Pattern.ALLOY, alloyTag)
@@ -148,7 +148,7 @@ public class FactoryRecipeProvider implements ISubRecipeProvider {
                 .key(Pattern.PREVIOUS, toUpgrade)
                 .key(Pattern.EXTRA_PREVIOUS, toExtraUpgrade)
                 .key(Pattern.STEEL_CASING, MekanismBlocks.STEEL_CASING)
-                .build(consumer, path);
+                .save(consumer, path);
     }
 
     private void addFactoryRecipes(RecipeOutput consumer, String basePath, FactoryType type,

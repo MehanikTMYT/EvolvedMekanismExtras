@@ -2,9 +2,8 @@ package io.github.masyumero.emextras.datagen.common.loot.table;
 
 import it.unimi.dsi.fastutil.objects.ReferenceArraySet;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
-import mekanism.api.annotations.NothingNullByDefault;
 import mekanism.common.Mekanism;
-import mekanism.common.attachments.containers.ContainerType;
+import mekanism.common.component.containers.type.*;
 import mekanism.common.block.BlockPersonalStorage;
 import mekanism.common.block.attribute.Attribute;
 import mekanism.common.block.attribute.Attributes.AttributeInventory;
@@ -15,17 +14,16 @@ import mekanism.common.registries.MekanismBlocks;
 import mekanism.common.resource.ore.OreBlockType;
 import mekanism.common.tile.base.TileEntityMekanism;
 import mekanism.common.tile.base.TileEntityUpdateable;
-import net.minecraft.advancements.critereon.StatePropertiesPredicate;
+import net.minecraft.advancements.criterion.StatePropertiesPredicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.loot.BlockLootSubProvider;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
@@ -146,9 +144,9 @@ public abstract class BaseBlockLootTables extends BlockLootSubProvider {
             }
             Block block = blockProvider.value();
             boolean hasComponents = false;
-            CopyComponentsFunction.Builder componentsBuilder = CopyComponentsFunction.copyComponents(CopyComponentsFunction.Source.BLOCK_ENTITY);
+            CopyComponentsFunction.Builder componentsBuilder = CopyComponentsFunction.copyComponentsFromBlockEntity(net.minecraft.world.level.storage.loot.parameters.LootContextParams.BLOCK_ENTITY);
             boolean hasContents = false;
-            ItemStack stack = new ItemStack(block);
+            Item item = block.asItem(); // port-26.1.2: default components are not bound during datagen.
             LootItem.Builder<?> itemLootPool = LootItem.lootTableItem(block);
             //delayed items until after other copies are added, for cases like referencing the owner
             DelayedLootItemBuilder delayedPool = new DelayedLootItemBuilder();
@@ -159,7 +157,7 @@ public abstract class BaseBlockLootTables extends BlockLootSubProvider {
             }
             if (tile instanceof IFrequencyHandler frequencyHandler) {
                 Set<FrequencyType<?>> customFrequencies = frequencyHandler.getFrequencyComponent().getCustomFrequencies();
-                if (!customFrequencies.isEmpty() && stack.getItem() instanceof IFrequencyItem frequencyItem) {
+                if (!customFrequencies.isEmpty() && item instanceof IFrequencyItem frequencyItem) {
                     FrequencyType<?> frequencyType = frequencyItem.getFrequencyType();
                     if (!customFrequencies.contains(frequencyType)) {
                         Mekanism.logger.warn("Block missing frequency type '{}' expected by item: {}", frequencyType.getName(), blockProvider.getId());
@@ -172,7 +170,7 @@ public abstract class BaseBlockLootTables extends BlockLootSubProvider {
                     Set<DataComponentType<?>> skipTypes = ContainerType.TYPES.stream().map(type -> type.getComponentType().get()).collect(Collectors.toSet());
                     hasComponents = true;
                     //Sort the components so that the order is consistent when writing to json
-                    components.sort(Comparator.comparing(BuiltInRegistries.DATA_COMPONENT_TYPE::getKey, ResourceLocation::compareNamespaced));
+                    components.sort(Comparator.comparing(BuiltInRegistries.DATA_COMPONENT_TYPE::getKey, Identifier::compareNamespaced));
                     for (DataComponentType<?> remapEntry : components) {
                         //Allow containers to be handled below where we do extra validation that the stack actually supports it
                         if (!skipTypes.contains(remapEntry)) {
@@ -183,11 +181,15 @@ public abstract class BaseBlockLootTables extends BlockLootSubProvider {
             }
             if (tile instanceof TileEntityMekanism tileEntity) {
                 if (tileEntity.isNameable()) {
-                    itemLootPool.apply(CopyNameFunction.copyName(CopyNameFunction.NameSource.BLOCK_ENTITY));
+                    itemLootPool.apply(CopyNameFunction.copyName(net.minecraft.world.level.storage.loot.LootContext.BlockEntityTarget.BLOCK_ENTITY));
                 }
-                for (ContainerType<?, ?, ?> type : ContainerType.TYPES) {
-                    List<?> containers = tileEntity.persists(type) ? type.getContainers(tileEntity) : Collections.emptyList();
-                    int attachmentContainers = type.getContainerCount(stack);
+                for (IContainerType<?, ?> type : ContainerType.TYPES) {
+                    // port-26.1.2: energy/heat now have one container; item/fluid/chemical use lists.
+                    List<?> containers = !tileEntity.persistsToItem(type) ? Collections.emptyList()
+                            : type instanceof IListContainerType<?, ?, ?> listType ? listType.getContainers(tileEntity)
+                            : type instanceof ISingleContainerType<?, ?> singleType && singleType.getContainer(tileEntity) != null
+                                    ? List.of(singleType.getContainer(tileEntity)) : Collections.emptyList();
+                    int attachmentContainers = type.getContainerCount(item);
                     if (containers.size() == attachmentContainers) {
                         if (!containers.isEmpty()) {
                             componentsBuilder.include(type.getComponentType().get());
@@ -316,7 +318,7 @@ public abstract class BaseBlockLootTables extends BlockLootSubProvider {
         );
     }
 
-    @NothingNullByDefault
+
     public static class DelayedLootItemBuilder implements ConditionUserBuilder<DelayedLootItemBuilder>, FunctionUserBuilder<DelayedLootItemBuilder> {
 
         private final List<LootItemFunction.Builder> functions = new ArrayList<>();

@@ -1,19 +1,19 @@
 {
   "type": "evolvedmekanism:alloying",
   "extra_input": {
-    "ingredient": "#c:circuits/ultimate",
-    "count": 1
+    "count": 1,
+    "ingredient": "#c:circuits/ultimate"
   },
   "main_input": {
-    "ingredient": "#evolvedmekanism:alloys/hypercharged",
-    "count": 2
+    "count": 2,
+    "ingredient": "#evolvedmekanism:alloys/hypercharged"
   },
   "output": {
     "count": 2,
     "id": "evolvedmekanism:overclocked_control_circuit"
   },
   "second_extra_input": {
-    "ingredient": "emextras:base_control_circuit",
-    "count": 1
+    "count": 1,
+    "ingredient": "emextras:base_control_circuit"
   }
 }

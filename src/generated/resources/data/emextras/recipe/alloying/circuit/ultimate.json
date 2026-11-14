@@ -1,19 +1,19 @@
 {
   "type": "evolvedmekanism:alloying",
   "extra_input": {
-    "ingredient": "#c:circuits/elite",
-    "count": 1
+    "count": 1,
+    "ingredient": "#c:circuits/elite"
   },
   "main_input": {
-    "ingredient": "#mekanism:alloys/atomic",
-    "count": 2
+    "count": 2,
+    "ingredient": "#mekanism:alloys/atomic"
   },
   "output": {
     "count": 2,
     "id": "mekanism:ultimate_control_circuit"
   },
   "second_extra_input": {
-    "ingredient": "emextras:base_control_circuit",
-    "count": 1
+    "count": 1,
+    "ingredient": "emextras:base_control_circuit"
   }
 }

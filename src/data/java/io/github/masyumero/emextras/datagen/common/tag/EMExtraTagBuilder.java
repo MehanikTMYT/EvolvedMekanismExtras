@@ -3,7 +3,7 @@ package io.github.masyumero.emextras.datagen.common.tag;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagBuilder;
 import net.minecraft.tags.TagKey;
 
@@ -16,13 +16,13 @@ import java.util.stream.Stream;
 //Based off of TagsProvider.TagAppender but with a few shortcuts for things like holders and also a few more helpers and addition of SafeVarargs annotations
 public class EMExtraTagBuilder<TYPE> {
 
-    private final Function<Holder<TYPE>, ResourceLocation> holderToName = holder -> Objects.requireNonNull(holder.getKey()).location();
-    private final Consumer<ResourceLocation> elementAdder;
-    private final Consumer<ResourceLocation> elementRemover;
-    private final Consumer<ResourceLocation> optionalElementAdder;
-    private final Consumer<ResourceLocation> tagAdder;
-    private final Consumer<ResourceLocation> tagRemover;
-    private final Consumer<ResourceLocation> optionalTagAdder;
+    private final Function<Holder<TYPE>, Identifier> holderToName = holder -> Objects.requireNonNull(holder.getKey()).identifier();
+    private final Consumer<Identifier> elementAdder;
+    private final Consumer<Identifier> elementRemover;
+    private final Consumer<Identifier> optionalElementAdder;
+    private final Consumer<Identifier> tagAdder;
+    private final Consumer<Identifier> tagRemover;
+    private final Consumer<Identifier> optionalTagAdder;
     private final TagBuilder builder;
 
     public EMExtraTagBuilder(TagBuilder builder) {
@@ -47,7 +47,7 @@ public class EMExtraTagBuilder<TYPE> {
 
     @SafeVarargs
     public final EMExtraTagBuilder<TYPE> add(ResourceKey<TYPE>... keys) {
-        return apply(elementAdder, ResourceKey::location, keys);
+        return apply(elementAdder, ResourceKey::identifier, keys);
     }
 
     @SafeVarargs
@@ -68,11 +68,11 @@ public class EMExtraTagBuilder<TYPE> {
     }
 
     public EMExtraTagBuilder<TYPE> replace(boolean value) {
-        builder.replace(value);
+        builder.setReplace(value);
         return this;
     }
 
-    public EMExtraTagBuilder<TYPE> addOptional(ResourceLocation... locations) {
+    public EMExtraTagBuilder<TYPE> addOptional(Identifier... locations) {
         return apply(optionalElementAdder, locations);
     }
 
@@ -81,7 +81,7 @@ public class EMExtraTagBuilder<TYPE> {
         return apply(optionalTagAdder, TagKey::location, tags);
     }
 
-    public EMExtraTagBuilder<TYPE> addOptionalTag(ResourceLocation... locations) {
+    public EMExtraTagBuilder<TYPE> addOptionalTag(Identifier... locations) {
         return apply(optionalTagAdder, locations);
     }
 

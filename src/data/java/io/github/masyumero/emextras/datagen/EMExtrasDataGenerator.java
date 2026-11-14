@@ -12,14 +12,12 @@ import io.github.masyumero.emextras.datagen.client.models.block.EMExtraBlockMode
 import io.github.masyumero.emextras.datagen.client.models.item.EMExtraItemModelProvider;
 import io.github.masyumero.emextras.datagen.common.loot.EMExtraLootProvider;
 import io.github.masyumero.emextras.datagen.common.recipe.impl.EMExtraRecipeProvider;
-import io.github.masyumero.emextras.datagen.common.registries.EMExtraDatapackRegistryProvider;
 import io.github.masyumero.emextras.datagen.common.tag.EMExtraTagProvider;
 import mekanism.common.Mekanism;
 import mekanism.common.lib.FieldReflectionHelper;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.CachedOutput;
-import net.minecraft.data.DataGenerator;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -33,7 +31,6 @@ import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.fml.event.lifecycle.InterModEnqueueEvent;
 import net.neoforged.fml.event.lifecycle.InterModProcessEvent;
 import net.neoforged.fml.util.ObfuscationReflectionHelper;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 
 import java.io.ByteArrayOutputStream;
@@ -69,24 +66,29 @@ public class EMExtrasDataGenerator {
     private EMExtrasDataGenerator() {
     }
 
+    // port-26.1.2: subscribe to concrete events; server data cannot load client providers.
     @SubscribeEvent
-    public static void gatherData(GatherDataEvent event) {
-        bootstrapConfigs(Mekanism.MODID);
-        bootstrapConfigs(EMExtras.MODID);
+    public static void gatherServerData(GatherDataEvent.Server event) {
+        // port-26.1.2: fake factory tiles also read dependency configs during loot generation.
+        for (String modid : List.of(Mekanism.MODID, EMExtras.MODID, "evolvedmekanism", "mekanism_extras", "mekmm")) {
+            bootstrapConfigs(modid);
+        }
         bootstrapIMC();
-        DataGenerator gen = event.getGenerator();
-        PackOutput output = gen.getPackOutput();
-        ExistingFileHelper existingFileHelper = event.getExistingFileHelper();
-        EMExtraDatapackRegistryProvider drProvider = new EMExtraDatapackRegistryProvider(output, event.getLookupProvider());
-        CompletableFuture<HolderLookup.Provider> lookupProvider = drProvider.getRegistryProvider();
-        //Client side data generators
-        gen.addProvider(event.includeClient(), new EMExtraLangProvider(output));
-        gen.addProvider(event.includeClient(), new EMExtraBlockModelProvider(output, existingFileHelper));
-        gen.addProvider(event.includeClient(), new EMExtraItemModelProvider(output, existingFileHelper));
-        //Server side data generators
-        gen.addProvider(event.includeServer(), new EMExtraLootProvider(output, lookupProvider));
-        gen.addProvider(event.includeServer(), new EMExtraTagProvider(output, lookupProvider, existingFileHelper));
-        gen.addProvider(event.includeServer(), new EMExtraRecipeProvider(output, lookupProvider, existingFileHelper));
+        PackOutput output = event.getGenerator().getPackOutput();
+        CompletableFuture<HolderLookup.Provider> lookup = event.getLookupProvider();
+        event.addProvider(new ExistingOutputProvider(output, "assets"));
+        event.addProvider(new EMExtraLootProvider(output, lookup));
+        event.addProvider(new EMExtraTagProvider(output, lookup));
+        event.addProvider(new EMExtraRecipeProvider(output, lookup));
+    }
+
+    @SubscribeEvent
+    public static void gatherClientData(GatherDataEvent.Client event) {
+        PackOutput output = event.getGenerator().getPackOutput();
+        event.addProvider(new ExistingOutputProvider(output, "data"));
+        event.addProvider(new EMExtraLangProvider(output));
+        event.addProvider(new EMExtraBlockModelProvider(output));
+        event.addProvider(new EMExtraItemModelProvider(output));
     }
 
     /**

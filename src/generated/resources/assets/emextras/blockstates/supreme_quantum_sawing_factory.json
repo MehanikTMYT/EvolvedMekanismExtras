@@ -13,7 +13,7 @@
     },
     "active=false,facing=west": {
       "model": "emextras:block/factory/sawing/supreme_quantum",
-      "y": -90
+      "y": 270
     },
     "active=true,facing=east": {
       "model": "emextras:block/factory/sawing/active/supreme_quantum",
@@ -28,7 +28,7 @@
     },
     "active=true,facing=west": {
       "model": "emextras:block/factory/sawing/active/supreme_quantum",
-      "y": -90
+      "y": 270
     }
   }
 }

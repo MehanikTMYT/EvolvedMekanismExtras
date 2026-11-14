@@ -13,7 +13,7 @@
     },
     "active=false,facing=west": {
       "model": "emextras:block/factory/sawing/infinite_multiversal",
-      "y": -90
+      "y": 270
     },
     "active=true,facing=east": {
       "model": "emextras:block/factory/sawing/active/infinite_multiversal",
@@ -28,7 +28,7 @@
     },
     "active=true,facing=west": {
       "model": "emextras:block/factory/sawing/active/infinite_multiversal",
-      "y": -90
+      "y": 270
     }
   }
 }

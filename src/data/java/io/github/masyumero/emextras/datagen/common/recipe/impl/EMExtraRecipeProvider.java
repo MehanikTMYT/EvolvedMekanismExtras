@@ -2,20 +2,17 @@ package io.github.masyumero.emextras.datagen.common.recipe.impl;
 
 import io.github.masyumero.emextras.datagen.common.recipe.BaseRecipeProvider;
 import io.github.masyumero.emextras.datagen.common.recipe.ISubRecipeProvider;
-import mekanism.api.annotations.NothingNullByDefault;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.recipes.RecipeOutput;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-@NothingNullByDefault
 public class EMExtraRecipeProvider extends BaseRecipeProvider {
 
-    public EMExtraRecipeProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> provider, ExistingFileHelper existingFileHelper) {
-        super(output, provider, existingFileHelper);
+    public EMExtraRecipeProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> provider) {
+        super(output, provider);
     }
 
     @Override

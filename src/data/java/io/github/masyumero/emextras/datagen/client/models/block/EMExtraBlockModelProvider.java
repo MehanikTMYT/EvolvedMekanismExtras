@@ -14,12 +14,11 @@ import io.github.masyumero.emextras.common.tier.EMExtraFactoryTier;
 import io.github.masyumero.emextras.common.util.EMExtraEnumUtils;
 import mekanism.common.content.blocktype.FactoryType;
 import net.minecraft.data.PackOutput;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
 
 public class EMExtraBlockModelProvider extends BaseBlockModelsProvider {
 
-    public EMExtraBlockModelProvider(PackOutput output, ExistingFileHelper exFileHelper) {
-        super(output, EMExtras.MODID, exFileHelper);
+    public EMExtraBlockModelProvider(PackOutput output) {
+        super(output, EMExtras.MODID);
     }
 
     @Override

@@ -1,19 +1,19 @@
 {
   "type": "evolvedmekanism:alloying",
   "extra_input": {
-    "ingredient": "#c:circuits/supreme",
-    "count": 1
+    "count": 1,
+    "ingredient": "#c:circuits/supreme"
   },
   "main_input": {
-    "ingredient": "emextras:base_control_circuit",
-    "count": 2
+    "count": 2,
+    "ingredient": "emextras:base_control_circuit"
   },
   "output": {
     "count": 2,
     "id": "emextras:supreme_quantum_control_circuit"
   },
   "second_extra_input": {
-    "ingredient": "#c:circuits/quantum",
-    "count": 1
+    "count": 1,
+    "ingredient": "#c:circuits/quantum"
   }
 }

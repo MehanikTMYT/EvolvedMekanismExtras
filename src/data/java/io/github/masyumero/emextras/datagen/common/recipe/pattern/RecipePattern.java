@@ -1,10 +1,9 @@
 package io.github.masyumero.emextras.datagen.common.recipe.pattern;
 
-import mekanism.api.annotations.NothingNullByDefault;
 import org.jetbrains.annotations.Nullable;
 
 //Note: We don't have a 1x1 pattern as that makes more sense to be done via a shapeless recipe
-@NothingNullByDefault
+
 public class RecipePattern {
 
     public final String row1;

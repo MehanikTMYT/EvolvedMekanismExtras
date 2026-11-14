@@ -13,7 +13,6 @@ import io.github.masyumero.emextras.common.config.LoadConfig;
 import io.github.masyumero.emextras.common.inventory.slot.chemical.EMExtraFactoryChemicalInventorySlot;
 import lombok.Getter;
 import mekanism.api.IContentsListener;
-import mekanism.api.RelativeSide;
 import mekanism.api.SerializationConstants;
 import mekanism.api.Upgrade;
 import mekanism.api.chemical.BasicChemicalTank;
@@ -106,7 +105,8 @@ public class TileEntityEMExtraItemStackChemicalToItemStackFactory extends TileEn
         super(blockProvider, pos, state, TRACKED_ERROR_TYPES, GLOBAL_ERROR_TYPES);
         chemicalInputHandler = InputHelper.getConstantInputHandler(chemicalTank);
         if (allowExtractingChemical()) {
-            configComponent.setupIOConfig(TransmissionType.CHEMICAL, chemicalTank, RelativeSide.RIGHT).setCanEject(false);
+            // port-26.1.2: third argument is an output container, not a side; side defaults are components.
+            configComponent.setupIOConfig(TransmissionType.CHEMICAL, chemicalTank).setCanEject(false);
         } else {
             configComponent.setupInputConfig(TransmissionType.CHEMICAL, chemicalTank);
         }

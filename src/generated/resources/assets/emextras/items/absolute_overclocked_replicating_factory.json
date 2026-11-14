@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "emextras:block/factory/replicating/absolute_overclocked"
+  }
+}

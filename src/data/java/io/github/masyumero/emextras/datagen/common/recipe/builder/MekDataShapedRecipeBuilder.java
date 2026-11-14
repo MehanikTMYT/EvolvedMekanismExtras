@@ -1,6 +1,5 @@
 package io.github.masyumero.emextras.datagen.common.recipe.builder;
 
-import mekanism.api.annotations.NothingNullByDefault;
 import mekanism.common.recipe.upgrade.MekanismShapedRecipe;
 import mekanism.common.registration.impl.BlockRegistryObject;
 import net.minecraft.core.Holder;
@@ -8,7 +7,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 
-@NothingNullByDefault
 public class MekDataShapedRecipeBuilder extends ExtendedShapedRecipeBuilder {
 
     private MekDataShapedRecipeBuilder(Holder<Item> result, int count) {
@@ -33,6 +31,6 @@ public class MekDataShapedRecipeBuilder extends ExtendedShapedRecipeBuilder {
 
     @Override
     protected Recipe<?> wrapRecipe(ShapedRecipe recipe) {
-        return new MekanismShapedRecipe(recipe);
+        return new MekanismShapedRecipe(new Recipe.CommonInfo(recipe.showNotification()), new net.minecraft.world.item.crafting.CraftingRecipe.CraftingBookInfo(recipe.category(), recipe.group()), recipe.pattern, resultStack());
     }
 }

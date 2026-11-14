@@ -13,7 +13,7 @@
     },
     "active=false,facing=west": {
       "model": "emextras:block/factory/oxidizing/absolute_overclocked",
-      "y": -90
+      "y": 270
     },
     "active=true,facing=east": {
       "model": "emextras:block/factory/oxidizing/active/absolute_overclocked",
@@ -28,7 +28,7 @@
     },
     "active=true,facing=west": {
       "model": "emextras:block/factory/oxidizing/active/absolute_overclocked",
-      "y": -90
+      "y": 270
     }
   }
 }
