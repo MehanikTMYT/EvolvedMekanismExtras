@@ -1,6 +1,7 @@
 package io.github.masyumero.emextras.common.tags;
 
-import net.minecraft.resources.ResourceLocation;
+// port-26.1.2: adapt MC 26 and Mekanism 10.8 signatures while preserving behavior.
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
@@ -21,7 +22,7 @@ public class EMExtraTags {
         public static final TagKey<Item> CIRCUITS_INFINITE_MULTIVERSAL = commonTag("circuits/infinite_multiversal");
 
         private static TagKey<Item> commonTag(String name) {
-            return ItemTags.create(ResourceLocation.fromNamespaceAndPath("c", name));
+            return ItemTags.create(Identifier.fromNamespaceAndPath("c", name));
         }
     }
 }

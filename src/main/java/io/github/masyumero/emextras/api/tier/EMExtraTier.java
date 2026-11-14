@@ -1,11 +1,12 @@
 package io.github.masyumero.emextras.api.tier;
 
+// port-26.1.2: migrate removed annotations and Mekanism/MC resource APIs.
 import io.github.masyumero.emextras.common.util.EMExtraColorUtils;
 import lombok.Getter;
 import mekanism.api.SupportsColorMap;
 import mekanism.api.math.MathUtils;
 import net.minecraft.network.chat.TextColor;
-import net.minecraft.util.FastColor;
+import net.minecraft.util.ARGB;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.material.MapColor;
 import org.jetbrains.annotations.NotNull;
@@ -58,7 +59,7 @@ public enum EMExtraTier implements StringRepresentable, SupportsColorMap {
     @Override
     public void setColorFromAtlas(int[] color) {
         this.rgbCode = color;
-        this.argb = FastColor.ARGB32.color(this.rgbCode[0], this.rgbCode[1], this.rgbCode[2]);
+        this.argb = ARGB.color(this.rgbCode[0], this.rgbCode[1], this.rgbCode[2]);
         this.textColor = TextColor.fromRgb(rgbCode[0] << 16 | rgbCode[1] << 8 | rgbCode[2]);
     }
 

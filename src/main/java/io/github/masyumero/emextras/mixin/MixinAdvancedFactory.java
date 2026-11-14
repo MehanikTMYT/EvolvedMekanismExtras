@@ -1,5 +1,6 @@
 package io.github.masyumero.emextras.mixin;
 
+// port-26.1.2: adapt MC 26 and Mekanism 10.8 signatures while preserving behavior.
 import com.jerry.mekaf.common.content.blocktype.AdvancedFactory;
 import com.jerry.mekaf.common.tile.factory.base.TileEntityAdvancedFactoryBase;
 import com.jerry.mekmm.common.content.blocktype.MoreMachineFactoryType;
@@ -20,7 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.function.Supplier;
 
 @Mixin(value = AdvancedFactory.class, remap = false)
-public class MixinAdvancedFactory<TILE extends TileEntityAdvancedFactoryBase<?, ?>> extends MoreMachineMachine.MoreMachineFactoryMachine<TILE> {
+public class MixinAdvancedFactory<TILE extends TileEntityAdvancedFactoryBase<?>> extends MoreMachineMachine.MoreMachineFactoryMachine<TILE> {
 
     public MixinAdvancedFactory(Supplier<TileEntityTypeRegistryObject<TILE>> tileEntitySupplier, ILangEntry description, MoreMachineFactoryType factoryType) {
         super(tileEntitySupplier, description, factoryType);

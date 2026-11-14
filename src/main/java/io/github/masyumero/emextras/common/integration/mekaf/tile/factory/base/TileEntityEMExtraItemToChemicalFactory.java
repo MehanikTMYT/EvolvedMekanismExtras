@@ -1,8 +1,14 @@
 package io.github.masyumero.emextras.common.integration.mekaf.tile.factory.base;
 
+import net.neoforged.neoforge.transfer.transaction.TransactionContext;
+import net.neoforged.neoforge.transfer.item.ItemResource;
+import mekanism.common.tile.component.config.slot.InventorySlotInfo;
+// port-26.1.2: typed container holders and server-level update context.
+import mekanism.api.fluid.IFluidTank;
+import mekanism.common.capabilities.holder.container.IContainerHolder;
+// port-26.1.2: migrate removed annotations and Mekanism/MC resource APIs.
 import com.jerry.mekaf.common.upgrade.ItemToChemicalUpgradeData;
 import io.github.masyumero.emextras.common.integration.mekaf.inventory.slot.EMExtraAdvancedFactoryInputInventorySlot;
-import mekanism.api.Action;
 import mekanism.api.IContentsListener;
 import mekanism.api.chemical.BasicChemicalTank;
 import mekanism.api.chemical.ChemicalStack;
@@ -16,8 +22,8 @@ import mekanism.api.recipes.inputs.InputHelper;
 import mekanism.api.recipes.outputs.IOutputHandler;
 import mekanism.api.recipes.outputs.OutputHelper;
 import mekanism.common.CommonWorldTickHandler;
-import mekanism.common.capabilities.holder.chemical.ChemicalTankHelper;
-import mekanism.common.capabilities.holder.slot.InventorySlotHelper;
+import mekanism.common.capabilities.holder.container.MekContainerHelper;
+import mekanism.api.inventory.IInventorySlot;
 import mekanism.common.integration.computer.ComputerException;
 import mekanism.common.integration.computer.annotation.ComputerMethod;
 import mekanism.common.inventory.warning.WarningTracker.WarningType;
@@ -35,7 +41,6 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.common.util.ItemStackMap;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -77,7 +82,7 @@ public abstract class TileEntityEMExtraItemToChemicalFactory<RECIPE extends Meka
     }
 
     @Override
-    protected void addTanks(ChemicalTankHelper builder, IContentsListener listener, IContentsListener updateSortingListener) {
+    protected void addTanks(MekContainerHelper<IChemicalTank> builder, IContentsListener listener, IContentsListener updateSortingListener) {
         outputTank = new IChemicalTank[tier.processes];
         chemicalOutputHandlers = new IOutputHandler[tier.processes];
         for (int i = 0; i < tier.processes; i++) {
@@ -87,19 +92,19 @@ public abstract class TileEntityEMExtraItemToChemicalFactory<RECIPE extends Meka
                 lookupMonitor.unpause();
             };
             outputTank[i] = BasicChemicalTank.output(MAX_CHEMICAL * tier.processes * tier.processes, updateSortingAndUnpause);
-            builder.addTank(outputTank[i]);
+            builder.addContainer(outputTank[i]);
             chemicalOutputHandlers[i] = OutputHelper.getOutputHandler(outputTank[i], RecipeError.NOT_ENOUGH_OUTPUT_SPACE);
         }
     }
 
     @Override
-    protected void addSlots(InventorySlotHelper builder, IContentsListener listener, IContentsListener updateSortingListener) {
+    protected void addSlots(MekContainerHelper<IInventorySlot> builder, IContentsListener listener, IContentsListener updateSortingListener) {
         inputSlot = new EMExtraAdvancedFactoryInputInventorySlot[tier.processes];
         itemInputHandlers = new IInputHandler[tier.processes];
         for (int i = 0; i < tier.processes; i++) {
             inputSlot[i] = EMExtraAdvancedFactoryInputInventorySlot.create(this, i, outputTank[i], recipeCacheLookupMonitors[i], getXPos(i), 13);
             int index = i;
-            builder.addSlot(inputSlot[i]).tracksWarnings(slot -> slot.warning(WarningType.NO_MATCHING_RECIPE, getWarningCheck(RecipeError.NOT_ENOUGH_INPUT, index)));
+            builder.addContainer(inputSlot[i]).tracksWarnings(slot -> slot.warning(WarningType.NO_MATCHING_RECIPE, getWarningCheck(RecipeError.NOT_ENOUGH_INPUT, index)));
             itemInputHandlers[i] = InputHelper.getInputHandler(inputSlot[i], RecipeError.NOT_ENOUGH_INPUT);
         }
     }
@@ -109,15 +114,15 @@ public abstract class TileEntityEMExtraItemToChemicalFactory<RECIPE extends Meka
         return 1;
     }
 
-    public boolean inputProducesOutput(int process, @NotNull ItemStack fallbackInput, @NotNull IChemicalTank outputTank, boolean updateCache) {
+    public boolean inputProducesOutput(int process, @NotNull net.neoforged.neoforge.transfer.item.ItemResource fallbackInput, @NotNull IChemicalTank outputTank, boolean updateCache) {
         return outputTank.isEmpty() || getRecipeForInput(process, fallbackInput, outputTank, updateCache) != null;
     }
 
     @Contract("null, _ -> false")
-    protected abstract boolean isCachedRecipeValid(@Nullable CachedRecipe<RECIPE> cached, @NotNull ItemStack stack);
+    protected abstract boolean isCachedRecipeValid(@Nullable CachedRecipe<RECIPE> cached, @NotNull net.neoforged.neoforge.transfer.item.ItemResource stack);
 
     @Nullable
-    protected RECIPE getRecipeForInput(int process, @NotNull ItemStack fallbackInput, @NotNull IChemicalTank outputTank, boolean updateCache) {
+    protected RECIPE getRecipeForInput(int process, @NotNull net.neoforged.neoforge.transfer.item.ItemResource fallbackInput, @NotNull IChemicalTank outputTank, boolean updateCache) {
         if (!CommonWorldTickHandler.flushTagAndRecipeCaches) {
             // If our recipe caches are valid, grab our cached recipe and see if it is still valid
             CachedRecipe<RECIPE> cached = getCachedRecipe(process);
@@ -141,38 +146,37 @@ public abstract class TileEntityEMExtraItemToChemicalFactory<RECIPE extends Meka
     }
 
     @Nullable
-    protected abstract RECIPE findRecipe(int process, @NotNull ItemStack fallbackInput, @NotNull IChemicalTank outputSlot);
+    protected abstract RECIPE findRecipe(int process, @NotNull net.neoforged.neoforge.transfer.item.ItemResource fallbackInput, @NotNull IChemicalTank outputSlot);
 
-    public abstract boolean isItemValidForSlot(@NotNull ItemStack stack);
+    public abstract boolean isItemValidForSlot(@NotNull net.neoforged.neoforge.transfer.item.ItemResource stack);
 
     /**
      * Like isItemValidForSlot makes no assumptions about current stored types
      */
-    public abstract boolean isValidInputItem(@NotNull ItemStack stack);
+    public abstract boolean isValidInputItem(@NotNull net.neoforged.neoforge.transfer.item.ItemResource stack);
 
-    protected abstract int getNeededInput(RECIPE recipe, ItemStack inputStack);
+    protected abstract int getNeededInput(RECIPE recipe, net.neoforged.neoforge.transfer.item.ItemResource inputStack);
 
+    // port-26.1.2: transactional upgrades and resource-aware balancing, matching MekAF.
     @Override
-    public void parseUpgradeData(HolderLookup.Provider provider, @NotNull IUpgradeData upgradeData) {
+    public void parseUpgradeData(@NotNull IUpgradeData upgradeData, HolderLookup.Provider provider, TransactionContext transaction) {
         if (upgradeData instanceof ItemToChemicalUpgradeData data) {
             redstone = data.redstone;
             setControlType(data.controlType);
-            getEnergyContainer().setEnergy(data.energyContainer.getEnergy());
+            energyContainer.copyContents(data.energyContainer, transaction);
             sorting = data.sorting;
-            energySlot.deserializeNBT(provider, data.energySlot.serializeNBT(provider));
+            energySlot.copyContents(data.energySlot, transaction);
             System.arraycopy(data.progress, 0, progress, 0, data.progress.length);
             for (int i = 0; i < data.inputSlots.size(); i++) {
                 // Copy the stack using NBT so that if it is not actually valid due to a reload we don't crash
-                inputItemSlots.get(i).deserializeNBT(provider, data.inputSlots.get(i).serializeNBT(provider));
+                inputItemSlots.get(i).copyContents(data.inputSlots.get(i), transaction);
             }
             for (int i = 0; i < data.outputTanks.size(); i++) {
-                outputChemicalTanks.get(i).setStack(data.outputTanks.get(i).getStack());
+                outputChemicalTanks.get(i).copyContents(data.outputTanks.get(i), transaction);
             }
-            for (ITileComponent component : getComponents()) {
-                component.read(data.components, provider);
-            }
+            readUpgradeComponents(provider, data.components);
         } else {
-            super.parseUpgradeData(provider, upgradeData);
+            super.parseUpgradeData(upgradeData, provider, transaction);
         }
     }
 
@@ -180,13 +184,15 @@ public abstract class TileEntityEMExtraItemToChemicalFactory<RECIPE extends Meka
     @ComputerMethod
     ItemStack getInput(int process) throws ComputerException {
         validateValidProcess(process);
-        return processInfoSlots[process].inputSlot().getStack();
+        IInventorySlot inputSlot = processInfoSlots[process].inputSlot();
+        return inputSlot.resource().toStack(inputSlot.amountAsInt());
     }
 
     @ComputerMethod
     ChemicalStack getOutput(int process) throws ComputerException {
         validateValidProcess(process);
-        return processInfoSlots[process].outputTank().getStack();
+        IChemicalTank outputTank = processInfoSlots[process].outputTank();
+        return outputTank.resource().toStack(outputTank.amountAsInt());
     }
 
     @ComputerMethod
@@ -197,28 +203,27 @@ public abstract class TileEntityEMExtraItemToChemicalFactory<RECIPE extends Meka
     // End methods IComputerTile
 
     protected void sortInventoryOrTank() {
-        Map<ItemStack, ICRecipeProcessInfo<RECIPE>> processes = ItemStackMap.createTypeAndTagMap();
+        Map<ItemResource, ICRecipeProcessInfo<ItemResource, RECIPE>> processes = new HashMap<>();
         List<ICProcessInfo> emptyProcesses = new ArrayList<>();
         for (ICProcessInfo processInfo : processInfoSlots) {
             IInventorySlot inputSlot = processInfo.inputSlot();
             if (inputSlot.isEmpty()) {
                 emptyProcesses.add(processInfo);
             } else {
-                ItemStack inputStack = inputSlot.getStack();
-                ICRecipeProcessInfo<RECIPE> recipeProcessInfo = processes.computeIfAbsent(inputStack, i -> new ICRecipeProcessInfo<>());
+                ItemResource inputStack = inputSlot.resource();
+                ICRecipeProcessInfo<ItemResource, RECIPE> recipeProcessInfo = processes.computeIfAbsent(inputStack, ICRecipeProcessInfo::new);
                 recipeProcessInfo.processes.add(processInfo);
-                recipeProcessInfo.totalCount += inputStack.getCount();
+                recipeProcessInfo.totalCount += inputSlot.amountAsLong();
                 if (recipeProcessInfo.lazyMinPerSlot == null && !CommonWorldTickHandler.flushTagAndRecipeCaches) {
                     // If we don't have a lazily initialized min per slot calculation set for it yet
                     // and our cache is not invalid/out of date due to a reload
                     CachedRecipe<RECIPE> cachedRecipe = getCachedRecipe(processInfo.process());
                     if (isCachedRecipeValid(cachedRecipe, inputStack)) {
-                        recipeProcessInfo.item = inputStack;
                         recipeProcessInfo.recipe = cachedRecipe.getRecipe();
                         // And our current process has a cached recipe then set the lazily initialized per slot value
                         // Note: If something goes wrong, and we end up with zero as how much we need as an input
                         // we just bump the value up to one to make sure we properly handle it
-                        recipeProcessInfo.lazyMinPerSlot = (info, factory) -> factory.getNeededInput(info.recipe, (ItemStack) info.item);
+                        recipeProcessInfo.lazyMinPerSlot = (info, factory) -> factory.getNeededInput(info.recipe, info.item);
                     }
                 }
             }
@@ -227,10 +232,9 @@ public abstract class TileEntityEMExtraItemToChemicalFactory<RECIPE extends Meka
             // If all input slots are empty, just exit
             return;
         }
-        for (Map.Entry<ItemStack, ICRecipeProcessInfo<RECIPE>> entry : processes.entrySet()) {
-            ICRecipeProcessInfo<RECIPE> recipeProcessInfo = entry.getValue();
+        for (Map.Entry<ItemResource, ICRecipeProcessInfo<ItemResource, RECIPE>> entry : processes.entrySet()) {
+            ICRecipeProcessInfo<ItemResource, RECIPE> recipeProcessInfo = entry.getValue();
             if (recipeProcessInfo.lazyMinPerSlot == null) {
-                recipeProcessInfo.item = entry.getKey();
                 // If we don't have a lazy initializer for our minPerSlot setup, that means that there is
                 // no valid cached recipe for any of the slots of this type currently, so we want to try and
                 // get the recipe we will have for the first slot, once we end up with more items in the stack
@@ -238,13 +242,11 @@ public abstract class TileEntityEMExtraItemToChemicalFactory<RECIPE extends Meka
                     // Note: We put all of this logic in the lazy init, so that we don't actually call any of this
                     // until it is needed. That way if we have no empty slots and all our input slots are filled
                     // we don't do any extra processing here, and can properly short circuit
-                    ItemStack item = (ItemStack) info.item;
-                    ItemStack largerInput = item.copyWithCount(Math.min(item.getMaxStackSize() * 8 << tier.ordinal(), info.totalCount));
                     ICProcessInfo processInfo = info.processes.getFirst();
                     // Try getting a recipe for our input with a larger size, and update the cache if we find one
-                    info.recipe = factory.getRecipeForInput(processInfo.process(), largerInput, processInfo.outputTank(), true);
+                    info.recipe = factory.getRecipeForInput(processInfo.process(), info.item, processInfo.outputTank(), true);
                     if (info.recipe != null) {
-                        return factory.getNeededInput(info.recipe, largerInput);
+                        return factory.getNeededInput(info.recipe, info.item);
                     }
                     return 1;
                 };
@@ -260,11 +262,11 @@ public abstract class TileEntityEMExtraItemToChemicalFactory<RECIPE extends Meka
         distributeItems(processes);
     }
 
-    protected void addEmptySlotsAsTargets(Map<ItemStack, ICRecipeProcessInfo<RECIPE>> processes, List<ICProcessInfo> emptyProcesses) {
-        for (Map.Entry<ItemStack, ICRecipeProcessInfo<RECIPE>> entry : processes.entrySet()) {
-            ICRecipeProcessInfo<RECIPE> recipeProcessInfo = entry.getValue();
-            int minPerSlot = recipeProcessInfo.getMinPerSlot(this);
-            int maxSlots = recipeProcessInfo.totalCount / minPerSlot;
+    protected void addEmptySlotsAsTargets(Map<ItemResource, ICRecipeProcessInfo<ItemResource, RECIPE>> processes, List<ICProcessInfo> emptyProcesses) {
+        for (Map.Entry<ItemResource, ICRecipeProcessInfo<ItemResource, RECIPE>> entry : processes.entrySet()) {
+            ICRecipeProcessInfo<ItemResource, RECIPE> recipeProcessInfo = entry.getValue();
+            long minPerSlot = recipeProcessInfo.getMinPerSlot(this);
+            long maxSlots = recipeProcessInfo.totalCount / minPerSlot;
             if (maxSlots <= 1) {
                 // If we don't have enough to even fill the input for a slot for a single recipe; skip
                 continue;
@@ -276,8 +278,8 @@ public abstract class TileEntityEMExtraItemToChemicalFactory<RECIPE extends Meka
                 continue;
             }
             // Note: This is some arbitrary input stack one of the stacks contained
-            ItemStack sourceStack = entry.getKey();
-            int emptyToAdd = maxSlots - processCount;
+            ItemResource sourceStack = entry.getKey();
+            long emptyToAdd = maxSlots - processCount;
             int added = 0;
             List<ICProcessInfo> toRemove = new ArrayList<>();
             for (ICProcessInfo emptyProcess : emptyProcesses) {
@@ -303,27 +305,27 @@ public abstract class TileEntityEMExtraItemToChemicalFactory<RECIPE extends Meka
         }
     }
 
-    protected void distributeItems(Map<ItemStack, ICRecipeProcessInfo<RECIPE>> processes) {
-        for (Map.Entry<ItemStack, ICRecipeProcessInfo<RECIPE>> entry : processes.entrySet()) {
-            ICRecipeProcessInfo<RECIPE> recipeProcessInfo = entry.getValue();
+    protected void distributeItems(Map<ItemResource, ICRecipeProcessInfo<ItemResource, RECIPE>> processes) {
+        for (Map.Entry<ItemResource, ICRecipeProcessInfo<ItemResource, RECIPE>> entry : processes.entrySet()) {
+            ICRecipeProcessInfo<ItemResource, RECIPE> recipeProcessInfo = entry.getValue();
             int processCount = recipeProcessInfo.processes.size();
             if (processCount == 1) {
                 // If there is only one process with the item in it; short-circuit, no balancing is needed
                 continue;
             }
-            ItemStack item = entry.getKey();
+            ItemResource item = entry.getKey();
             // Note: This isn't based on any limits the slot may have (but we currently don't have any reduced ones
             // here, so it doesn't matter)
-            int maxStackSize = item.getMaxStackSize() * 8 << tier.ordinal();
-            int numberPerSlot = recipeProcessInfo.totalCount / processCount;
+            int maxStackSize = item.getMaxStackSize() * (8 << tier.ordinal()); // port-26.1.2: preserve tier scaling
+            long numberPerSlot = recipeProcessInfo.totalCount / processCount;
             if (numberPerSlot == maxStackSize) {
                 // If all the slots are already maxed out; short-circuit, no balancing is needed
                 continue;
             }
-            int remainder = recipeProcessInfo.totalCount % processCount;
-            int minPerSlot = recipeProcessInfo.getMinPerSlot(this);
+            long remainder = recipeProcessInfo.totalCount % processCount;
+            long minPerSlot = recipeProcessInfo.getMinPerSlot(this);
             if (minPerSlot > 1) {
-                int perSlotRemainder = numberPerSlot % minPerSlot;
+                long perSlotRemainder = numberPerSlot % minPerSlot;
                 if (perSlotRemainder > 0) {
                     // Reduce the number we distribute per slot by what our excess
                     // is if we are trying to balance it by the size of the input
@@ -355,7 +357,7 @@ public abstract class TileEntityEMExtraItemToChemicalFactory<RECIPE extends Meka
             for (int i = 0; i < processCount; i++) {
                 ICProcessInfo processInfo = recipeProcessInfo.processes.get(i);
                 EMExtraAdvancedFactoryInputInventorySlot inputSlot = processInfo.inputSlot();
-                int sizeForSlot = numberPerSlot;
+                long sizeForSlot = numberPerSlot;
                 if (remainder > 0) {
                     // If we have a remainder, factor it into our slots
                     if (remainder > minPerSlot) {
@@ -373,36 +375,7 @@ public abstract class TileEntityEMExtraItemToChemicalFactory<RECIPE extends Meka
                         remainder = 0;
                     }
                 }
-                if (inputSlot.isEmpty()) {
-                    // Note: sizeForSlot should never be zero here as we would not have added
-                    // the empty slot to this item's distribution grouping if it would not
-                    // end up getting any items; check it just in case though before creating
-                    // a stack for the slot and setting it
-                    if (sizeForSlot > 0) {
-                        // Note: We use setStackUnchecked here, as there is a very small chance that
-                        // the stack is not actually valid for the slot because of a reload causing
-                        // recipes to change. If this is the case, then we want to properly not crash,
-                        // but we would rather not add any extra overhead about revalidating the item
-                        // each time as it can get somewhat expensive.
-                        inputSlot.setStackUnchecked(item.copyWithCount(sizeForSlot));
-                    }
-                } else {
-                    // Slot is not currently empty
-                    if (sizeForSlot == 0) {
-                        // If the amount of the item we want to set it to is zero (all got used by earlier stacks, which
-                        // might
-                        // happen if the recipe requires a stacked input (minPerSlot > 1)), then we need to set the slot
-                        // to empty
-                        inputSlot.setEmpty();
-                    } else if (inputSlot.getCount() != sizeForSlot) {
-                        // Otherwise, if our slot doesn't already contain the amount we want it to,
-                        // we need to adjust how much is stored in it, and log an error if it changed
-                        // by a different amount then we expected
-                        // Note: We use setStackSize here rather than setStack to avoid an unnecessary stack copy call
-                        // as copying item stacks can sometimes be rather expensive in a heavily modded environment
-                        MekanismUtils.logMismatchedStackSize(sizeForSlot, inputSlot.setStackSize(sizeForSlot, Action.EXECUTE));
-                    }
-                }
+                inputSlot.setContents(item, sizeForSlot, null);
             }
         }
     }
@@ -410,17 +383,21 @@ public abstract class TileEntityEMExtraItemToChemicalFactory<RECIPE extends Meka
     public record ICProcessInfo(int process, @NotNull EMExtraAdvancedFactoryInputInventorySlot inputSlot,
                                 @NotNull IChemicalTank outputTank) {}
 
-    protected static class ICRecipeProcessInfo<RECIPE extends MekanismRecipe<?>> {
+    protected static class ICRecipeProcessInfo<ITEM, RECIPE extends MekanismRecipe<?>> {
 
         private final List<ICProcessInfo> processes = new ArrayList<>();
         @Nullable
-        private ToIntBiFunction<ICRecipeProcessInfo<RECIPE>, TileEntityEMExtraItemToChemicalFactory<RECIPE>> lazyMinPerSlot;
-        private Object item;
+        private ToIntBiFunction<ICRecipeProcessInfo<ITEM, RECIPE>, TileEntityEMExtraItemToChemicalFactory<RECIPE>> lazyMinPerSlot;
+        private final ITEM item;
         private RECIPE recipe;
-        private int minPerSlot = 1;
-        private int totalCount;
+        private long minPerSlot = 1;
+        private long totalCount;
 
-        public int getMinPerSlot(TileEntityEMExtraItemToChemicalFactory<RECIPE> factory) {
+        public ICRecipeProcessInfo(ITEM item) {
+            this.item = item;
+        }
+
+        public long getMinPerSlot(TileEntityEMExtraItemToChemicalFactory<RECIPE> factory) {
             if (lazyMinPerSlot != null) {
                 // Get the value lazily
                 minPerSlot = Math.max(1, lazyMinPerSlot.applyAsInt(this, factory));

@@ -1,5 +1,6 @@
 package io.github.masyumero.emextras.client.gui.element.tab;
 
+// port-26.1.2: migrate removed annotations and Mekanism/MC resource APIs.
 import io.github.masyumero.emextras.common.integration.mekaf.tile.factory.base.TileEntityEMExtraAdvancedFactoryBase;
 import io.github.masyumero.emextras.common.network.to_server.EMExtraPacketGuiInteract;
 import mekanism.client.SpecialColors;
@@ -11,7 +12,7 @@ import mekanism.common.network.PacketUtils;
 import mekanism.common.util.MekanismUtils;
 import mekanism.common.util.text.BooleanStateDisplay;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -23,18 +24,18 @@ public class EMExtraAdvancedFactoryGuiSortingTab extends GuiInsetElement<TileEnt
     }
 
     @Override
-    public void drawBackground(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
+    public void drawBackground(@NotNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTicks) {
         super.drawBackground(guiGraphics, mouseX, mouseY, partialTicks);
         drawScrollingString(guiGraphics, BooleanStateDisplay.OnOff.of(dataSource.isSorting()).getTextComponent(), 0, 24, TextAlignment.CENTER, titleTextColor(), 3, false);
     }
 
     @Override
-    protected void colorTab(GuiGraphics guiGraphics) {
-        MekanismRenderer.color(guiGraphics, SpecialColors.TAB_FACTORY_SORT);
+    protected int getTabColor(GuiGraphicsExtractor guiGraphics) {
+        return MekanismRenderer.color(SpecialColors.TAB_FACTORY_SORT);
     }
 
     @Override
-    public void onClick(double mouseX, double mouseY, int button) {
+    public void onClick(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
         PacketUtils.sendToServer(new EMExtraPacketGuiInteract(EMExtraPacketGuiInteract.EMExtraGuiInteraction.AUTO_SORT_BUTTON, dataSource));
     }
 }

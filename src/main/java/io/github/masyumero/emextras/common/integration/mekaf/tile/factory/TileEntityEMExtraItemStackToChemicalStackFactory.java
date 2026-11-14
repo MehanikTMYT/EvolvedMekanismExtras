@@ -1,5 +1,7 @@
 package io.github.masyumero.emextras.common.integration.mekaf.tile.factory;
 
+import net.neoforged.neoforge.transfer.item.ItemResource;
+import mekanism.api.chemical.ChemicalResource;
 import com.jerry.mekaf.common.upgrade.ItemToChemicalUpgradeData;
 import io.github.masyumero.emextras.common.integration.mekaf.tile.factory.base.TileEntityEMExtraItemToChemicalFactory;
 import mekanism.api.chemical.ChemicalStack;
@@ -35,7 +37,8 @@ import java.util.Set;
 
 public class TileEntityEMExtraItemStackToChemicalStackFactory extends TileEntityEMExtraItemToChemicalFactory<ItemStackToChemicalRecipe> implements ItemRecipeLookupHandler<ItemStackToChemicalRecipe> {
 
-    private static final TriPredicate<ItemStackToChemicalRecipe, ItemStack, ChemicalStack> OUTPUT_CHECK = (recipe, input, output) -> ChemicalStack.isSameChemical(recipe.getOutput(input), output);
+    // port-26.1.2: compare resource identities against recipe output templates.
+    private static final TriPredicate<ItemStackToChemicalRecipe, ItemResource, ChemicalResource> OUTPUT_CHECK = (recipe, input, output) -> output.isEmpty() || output.is(recipe.getOutput(input).typeHolder());
     private static final List<RecipeError> TRACKED_ERROR_TYPES = List.of(
             RecipeError.NOT_ENOUGH_ENERGY,
             RecipeError.NOT_ENOUGH_INPUT,
@@ -46,7 +49,7 @@ public class TileEntityEMExtraItemStackToChemicalStackFactory extends TileEntity
     public TileEntityEMExtraItemStackToChemicalStackFactory(Holder<Block> blockProvider, BlockPos pos, BlockState state) {
         super(blockProvider, pos, state, TRACKED_ERROR_TYPES, GLOBAL_ERROR_TYPES);
 
-        ejectorComponent = new TileComponentEjector(this);
+        // port-26.1.2: superclass initializes ejector.
         ejectorComponent.setOutputData(configComponent, TransmissionType.ITEM, TransmissionType.CHEMICAL);
     }
 
@@ -75,7 +78,7 @@ public class TileEntityEMExtraItemStackToChemicalStackFactory extends TileEntity
 
     @Override
     public @NotNull CachedRecipe<ItemStackToChemicalRecipe> createNewCachedRecipe(@NotNull ItemStackToChemicalRecipe recipe, int cacheIndex) {
-        return OneInputCachedRecipe.itemToChemical(recipe, recheckAllRecipeErrors[cacheIndex], itemInputHandlers[cacheIndex], chemicalOutputHandlers[cacheIndex])
+        return new OneInputCachedRecipe<>(recipe, recheckAllRecipeErrors[cacheIndex], itemInputHandlers[cacheIndex], chemicalOutputHandlers[cacheIndex])
                 .setErrorsChanged(errors -> errorTracker.onErrorsChanged(errors, cacheIndex))
                 .setCanHolderFunction(this::canFunction)
                 .setActive(active -> setActiveState(active, cacheIndex))
@@ -88,35 +91,35 @@ public class TileEntityEMExtraItemStackToChemicalStackFactory extends TileEntity
 
     @Override
     @Contract("null, _ -> false")
-    protected boolean isCachedRecipeValid(@Nullable CachedRecipe<ItemStackToChemicalRecipe> cached, @NotNull ItemStack stack) {
+    protected boolean isCachedRecipeValid(@Nullable CachedRecipe<ItemStackToChemicalRecipe> cached, @NotNull net.neoforged.neoforge.transfer.item.ItemResource stack) {
         return cached != null && cached.getRecipe().getInput().testType(stack);
     }
 
     @Override
     @Nullable
-    protected ItemStackToChemicalRecipe findRecipe(int process, @NotNull ItemStack fallbackInput, @NotNull IChemicalTank outputSlot) {
-        return getRecipeType().getInputCache().findTypeBasedRecipe(level, fallbackInput, outputSlot.getStack(), OUTPUT_CHECK);
+    protected ItemStackToChemicalRecipe findRecipe(int process, @NotNull net.neoforged.neoforge.transfer.item.ItemResource fallbackInput, @NotNull IChemicalTank outputSlot) {
+        return getRecipeType().getInputCache().findTypeBasedRecipe(level, fallbackInput, outputSlot.resource(), OUTPUT_CHECK);
     }
 
     @Override
-    protected int getNeededInput(ItemStackToChemicalRecipe recipe, ItemStack inputStack) {
+    protected int getNeededInput(ItemStackToChemicalRecipe recipe, net.neoforged.neoforge.transfer.item.ItemResource inputStack) {
         return MathUtils.clampToInt(recipe.getInput().getNeededAmount(inputStack));
     }
 
     // 物品能否放进槽位
     @Override
-    public boolean isItemValidForSlot(@NotNull ItemStack stack) {
+    public boolean isItemValidForSlot(@NotNull net.neoforged.neoforge.transfer.item.ItemResource stack) {
         return containsRecipe(stack);
     }
 
     @Override
-    public boolean isValidInputItem(@NotNull ItemStack stack) {
+    public boolean isValidInputItem(@NotNull net.neoforged.neoforge.transfer.item.ItemResource stack) {
         return containsRecipe(stack);
     }
 
     @Override
     public @Nullable IUpgradeData getUpgradeData(HolderLookup.Provider provider) {
         return new ItemToChemicalUpgradeData(provider, redstone, getControlType(), getEnergyContainer(),
-                progress, energySlot, inputItemSlots, outputChemicalTanks, isSorting(), getComponents());
+                progress, energySlot, inputItemSlots, outputChemicalTanks, isSorting(), getComponents(), problemPath());
     }
 }

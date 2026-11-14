@@ -1,10 +1,13 @@
 package io.github.masyumero.emextras.common.integration.mekmm.tile.factory;
 
+import net.neoforged.neoforge.transfer.transaction.TransactionContext;
+import mekanism.common.Mekanism;
+// port-26.1.2: migrate removed annotations and Mekanism/MC resource APIs.
 import com.jerry.mekmm.api.recipes.TripleItemToItemRecipe;
 import com.jerry.mekmm.api.recipes.cache.ThreeInputCachedRecipe;
-import com.jerry.mekmm.client.recipe_viewer.MoreMachineRecipeViewerRecipeType;
+import com.jerry.mekmm.client.recipe_viewer.MMRecipeViewerRecipeType;
 import com.jerry.mekmm.common.recipe.MoreMachineRecipeType;
-import com.jerry.mekmm.common.recipe.lookup.TripleItemRecipeLookupHandler;
+import mekanism.common.recipe.lookup.ITripleRecipeLookupHandler;
 import com.jerry.mekmm.common.recipe.lookup.cache.MoreMachineInputRecipeCache.TripleItem;
 import com.jerry.mekmm.common.tile.machine.TileEntityPresser;
 
@@ -16,7 +19,8 @@ import mekanism.api.recipes.cache.CachedRecipe.OperationTracker.RecipeError;
 import mekanism.api.recipes.inputs.IInputHandler;
 import mekanism.api.recipes.inputs.InputHelper;
 import mekanism.client.recipe_viewer.type.IRecipeViewerRecipeType;
-import mekanism.common.capabilities.holder.slot.InventorySlotHelper;
+import mekanism.common.capabilities.holder.container.MekContainerHelper;
+import mekanism.api.inventory.IInventorySlot;
 import mekanism.common.integration.computer.SpecialComputerMethodWrapper.ComputerIInventorySlotWrapper;
 import mekanism.common.integration.computer.annotation.WrappingComputerMethod;
 import mekanism.common.inventory.container.slot.ContainerSlotType;
@@ -40,7 +44,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Set;
 
-public class TileEntityEMExtraPressingFactory extends TileEntityEMExtraItemToItemMoreMachineFactory<TripleItemToItemRecipe> implements TripleItemRecipeLookupHandler<TripleItemToItemRecipe> {
+public class TileEntityEMExtraPressingFactory extends TileEntityEMExtraItemToItemMoreMachineFactory<TripleItemToItemRecipe> implements ITripleRecipeLookupHandler<net.minecraft.world.item.Item, ItemStack, net.minecraft.world.item.Item, ItemStack, net.minecraft.world.item.Item, ItemStack, TripleItemToItemRecipe, com.jerry.mekmm.common.recipe.lookup.cache.MoreMachineInputRecipeCache.TripleItem<TripleItemToItemRecipe>> {
 
     private static final List<RecipeError> TRACKED_ERROR_TYPES = List.of(
             RecipeError.NOT_ENOUGH_ENERGY,
@@ -54,8 +58,8 @@ public class TileEntityEMExtraPressingFactory extends TileEntityEMExtraItemToIte
             RecipeError.NOT_ENOUGH_SECONDARY_INPUT,
             TileEntityPresser.NOT_ENOUGH_TERTIARY_INPUT_ERROR);
 
-    private final IInputHandler<@NotNull ItemStack> secondaryInputHandler;
-    private final IInputHandler<@NotNull ItemStack> tertiaryInputHandler;
+    private final IInputHandler<net.minecraft.world.item.Item, @NotNull ItemStack> secondaryInputHandler;
+    private final IInputHandler<net.minecraft.world.item.Item, @NotNull ItemStack> tertiaryInputHandler;
 
     @WrappingComputerMethod(wrapper = ComputerIInventorySlotWrapper.class, methodNames = "getSecondaryInput", docPlaceholder = "secondary input slot")
     InputInventorySlot secondarySlot;
@@ -82,10 +86,10 @@ public class TileEntityEMExtraPressingFactory extends TileEntityEMExtraItemToIte
     }
 
     @Override
-    protected void addSlots(InventorySlotHelper builder, IContentsListener listener, IContentsListener updateSortingListener) {
+    protected void addSlots(MekContainerHelper<IInventorySlot> builder, IContentsListener listener, IContentsListener updateSortingListener) {
         super.addSlots(builder, listener, updateSortingListener);
-        builder.addSlot(secondarySlot = InputInventorySlot.at(this::containsRecipeB, markAllMonitorsChanged(listener), 7, 57));
-        builder.addSlot(tertiarySlot = InputInventorySlot.at(this::containsRecipeC, markAllMonitorsChanged(listener), 7, 37));
+        builder.addContainer(secondarySlot = InputInventorySlot.at(this::containsRecipeB, markAllMonitorsChanged(listener), 7, 57));
+        builder.addContainer(tertiarySlot = InputInventorySlot.at(this::containsRecipeC, markAllMonitorsChanged(listener), 7, 37));
         tertiarySlot.setSlotType(ContainerSlotType.EXTRA);
     }
 
@@ -101,31 +105,31 @@ public class TileEntityEMExtraPressingFactory extends TileEntityEMExtraItemToIte
     }
 
     @Override
-    protected boolean isCachedRecipeValid(@Nullable CachedRecipe<TripleItemToItemRecipe> cached, @NotNull ItemStack stack) {
+    protected boolean isCachedRecipeValid(@Nullable CachedRecipe<TripleItemToItemRecipe> cached, @NotNull net.neoforged.neoforge.transfer.item.ItemResource stack) {
         if (cached != null) {
             TripleItemToItemRecipe cachedRecipe = cached.getRecipe();
-            return cachedRecipe.getFirstInput().testType(stack) && (secondarySlot.isEmpty() || cachedRecipe.getSecondInput().testType(secondarySlot.getStack())) && (tertiarySlot.isEmpty() || cachedRecipe.getThirdInput().testType(tertiarySlot.getStack()));
+            return cachedRecipe.getFirstInput().testType(stack) && (secondarySlot.isEmpty() || cachedRecipe.getSecondInput().testType(secondarySlot.resource())) && (tertiarySlot.isEmpty() || cachedRecipe.getThirdInput().testType(tertiarySlot.resource()));
         }
         return false;
     }
 
     @Override
-    protected @Nullable TripleItemToItemRecipe findRecipe(int process, @NotNull ItemStack fallbackInput, @NotNull IInventorySlot outputSlot, @Nullable IInventorySlot secondaryOutputSlot) {
-        return getRecipeType().getInputCache().findFirstRecipe(level, fallbackInput, secondarySlot.getStack(), tertiarySlot.getStack());
+    protected @Nullable TripleItemToItemRecipe findRecipe(int process, @NotNull net.neoforged.neoforge.transfer.item.ItemResource fallbackInput, @NotNull IInventorySlot outputSlot, @Nullable IInventorySlot secondaryOutputSlot) {
+        return getRecipeType().getInputCache().findFirstRecipe(level, fallbackInput.toStack(), secondarySlot.resource().toStack(), tertiarySlot.resource().toStack());
     }
 
     @Override
-    protected int getNeededInput(TripleItemToItemRecipe recipe, ItemStack inputStack) {
+    protected int getNeededInput(TripleItemToItemRecipe recipe, net.neoforged.neoforge.transfer.item.ItemResource inputStack) {
         return MathUtils.clampToInt(recipe.getFirstInput().getNeededAmount(inputStack));
     }
 
     @Override
-    public boolean isItemValidForSlot(@NotNull ItemStack stack) {
-        return containsRecipeABC(stack, secondarySlot.getStack(), tertiarySlot.getStack());
+    public boolean isItemValidForSlot(@NotNull net.neoforged.neoforge.transfer.item.ItemResource stack) {
+        return containsRecipeABC(stack, secondarySlot.resource(), tertiarySlot.resource());
     }
 
     @Override
-    public boolean isValidInputItem(@NotNull ItemStack stack) {
+    public boolean isValidInputItem(@NotNull net.neoforged.neoforge.transfer.item.ItemResource stack) {
         return containsRecipeA(stack);
     }
 
@@ -136,7 +140,7 @@ public class TileEntityEMExtraPressingFactory extends TileEntityEMExtraItemToIte
 
     @Override
     public @Nullable IRecipeViewerRecipeType<TripleItemToItemRecipe> recipeViewerType() {
-        return MoreMachineRecipeViewerRecipeType.PRESSING;
+        return MMRecipeViewerRecipeType.PRESSING;
     }
 
     @Override
@@ -146,7 +150,7 @@ public class TileEntityEMExtraPressingFactory extends TileEntityEMExtraItemToIte
 
     @Override
     public @NotNull CachedRecipe<TripleItemToItemRecipe> createNewCachedRecipe(@NotNull TripleItemToItemRecipe recipe, int cacheIndex) {
-        return ThreeInputCachedRecipe.TripleItemToItem(recipe, recheckAllRecipeErrors[cacheIndex], inputHandlers[cacheIndex], secondaryInputHandler, tertiaryInputHandler, outputHandlers[cacheIndex])
+        return ThreeInputCachedRecipe.tripleItemToItem(recipe, recheckAllRecipeErrors[cacheIndex], inputHandlers[cacheIndex], secondaryInputHandler, tertiaryInputHandler, outputHandlers[cacheIndex])
                 .setErrorsChanged(errors -> errorTracker.onErrorsChanged(errors, cacheIndex))
                 .setCanHolderFunction(this::canFunction)
                 .setActive(active -> setActiveState(active, cacheIndex))

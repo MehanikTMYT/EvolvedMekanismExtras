@@ -1,5 +1,6 @@
 package io.github.masyumero.emextras.client.gui.machine;
 
+// port-26.1.2: migrate removed annotations and Mekanism/MC resource APIs.
 import io.github.masyumero.emextras.client.gui.element.tab.EMExtraGuiSortingTab;
 import io.github.masyumero.emextras.common.tile.factory.TileEntityEMExtraFactory;
 import io.github.masyumero.emextras.common.tile.factory.TileEntityEMExtraItemStackChemicalToItemStackFactory;
@@ -15,7 +16,7 @@ import mekanism.client.gui.element.tab.GuiEnergyTab;
 import mekanism.common.inventory.container.tile.MekanismTileContainer;
 import mekanism.common.inventory.warning.WarningTracker;
 import mekanism.common.tile.interfaces.IHasDumpButton;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import org.jetbrains.annotations.NotNull;
@@ -26,18 +27,30 @@ public class GuiEMExtraFactory extends GuiConfigurableTile<TileEntityEMExtraFact
     @Nullable
     private GuiDumpButton<?> dumpButton;
 
-    public GuiEMExtraFactory(MekanismTileContainer<TileEntityEMExtraFactory<?>> container, Inventory inv, Component title) {
-        super(container, inv, title);
+    // port-26.1.2: screen dimensions must be supplied to the constructor.
+    private static int imageHeight(TileEntityEMExtraFactory<?> tile) {
+        int height = DEFAULT_IMAGE_HEIGHT;
         if (tile.hasSecondaryResourceBar()) {
-            imageHeight += 11;
+            height += 11;
+        } else if (tile instanceof TileEntityEMExtraSawingFactory) {
+            height += 21;
+        } else {
+        }
+
+        return height;
+    }
+
+    public GuiEMExtraFactory(MekanismTileContainer<TileEntityEMExtraFactory<?>> container, Inventory inv, Component title) {
+        super(container, inv, title, DEFAULT_IMAGE_WIDTH + container.getTileEntity().tier.imageWidth, imageHeight(container.getTileEntity()));
+        if (tile.hasSecondaryResourceBar()) {
+
             inventoryLabelY = 85;
         } else if (tile instanceof TileEntityEMExtraSawingFactory) {
-            imageHeight += 21;
+
             inventoryLabelY = 95;
         } else {
             inventoryLabelY = 75;
         }
-        imageWidth += tile.tier.imageWidth;
         inventoryLabelX = tile.tier.inventoryLabelX;
 
         titleLabelY = 4;
@@ -50,11 +63,11 @@ public class GuiEMExtraFactory extends GuiConfigurableTile<TileEntityEMExtraFact
         addRenderableWidget(new EMExtraGuiSortingTab(this, tile));
         addRenderableWidget(new GuiVerticalPowerBar(this, tile.getEnergyContainer(), imageWidth - 12, 16, tile instanceof TileEntityEMExtraSawingFactory ? 73 : 52))
                 .warning(WarningTracker.WarningType.NOT_ENOUGH_ENERGY, tile.getWarningCheck(CachedRecipe.OperationTracker.RecipeError.NOT_ENOUGH_ENERGY, 0));
-        addRenderableWidget(new GuiEnergyTab(this, tile.getEnergyContainer(), tile::getLastUsage));
+        addRenderableWidget(new GuiEnergyTab(this, tile.getEnergyContainerTyped(), tile::getLastUsage));
         if (tile.hasSecondaryResourceBar()) {
             if (tile instanceof TileEntityEMExtraItemStackChemicalToItemStackFactory factory) {
                 int index = tile.tier.ordinal();
-                addRenderableWidget(new GuiChemicalBar(this, GuiChemicalBar.getProvider(factory.getChemicalTank(), tile.getChemicalTanks(null)), 7, 76,
+                addRenderableWidget(new GuiChemicalBar(this, GuiChemicalBar.getProvider(factory.getChemicalTank(), tile.getChemicalTanks()), 7, 76,
                         210 + 38 * index, 4, true))
                         .warning(WarningTracker.WarningType.NO_MATCHING_RECIPE, tile.getWarningCheck(CachedRecipe.OperationTracker.RecipeError.NOT_ENOUGH_SECONDARY_INPUT, 0));
                 dumpButton = addRenderableWidget(new GuiDumpButton<>(this, (TileEntityEMExtraFactory<?> & IHasDumpButton) tile,
@@ -73,7 +86,7 @@ public class GuiEMExtraFactory extends GuiConfigurableTile<TileEntityEMExtraFact
     }
 
     @Override
-    protected void drawForegroundText(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
+    protected void drawForegroundText(@NotNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
         renderTitleText(guiGraphics);
         renderInventoryText(guiGraphics, dumpButton == null ? getXSize() : dumpButton.getRelativeX());
         super.drawForegroundText(guiGraphics, mouseX, mouseY);

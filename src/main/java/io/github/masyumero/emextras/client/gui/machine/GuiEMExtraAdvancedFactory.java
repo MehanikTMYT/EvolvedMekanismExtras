@@ -1,5 +1,6 @@
 package io.github.masyumero.emextras.client.gui.machine;
 
+// port-26.1.2: migrate removed annotations and Mekanism/MC resource APIs.
 import com.jerry.mekaf.common.tile.factory.TileEntityPressurizedReactingFactory;
 import io.github.masyumero.emextras.client.gui.element.tab.EMExtraAdvancedFactoryGuiSortingTab;
 import io.github.masyumero.emextras.common.integration.mekaf.tile.factory.TileEntityEMExtraLiquifyingFactory;
@@ -27,7 +28,7 @@ import mekanism.client.gui.element.tab.GuiEnergyTab;
 import mekanism.common.inventory.container.tile.MekanismTileContainer;
 import mekanism.common.inventory.warning.WarningTracker.WarningType;
 import mekanism.common.tile.interfaces.IHasDumpButton;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import org.jetbrains.annotations.NotNull;
@@ -39,20 +40,34 @@ public class GuiEMExtraAdvancedFactory extends GuiConfigurableTile<TileEntityEME
     private GuiDumpButton<?> dumpButton;
     private final int tankCount;
 
+    // port-26.1.2: screen dimensions must be supplied to the constructor.
+    private static int imageHeight(TileEntityEMExtraAdvancedFactoryBase<?> tile) {
+        int height = DEFAULT_IMAGE_HEIGHT;
+        int tankCount = tile.getTankCount();
+        // 根据储罐数量决定gui布局
+        height += 13 * tankCount;
+        if (tile.hasExtraResourceBar()) {
+            int num = tile.getBarCount() - 1;
+            height += 11 + 8 * num;
+            // 第一个额外资源槽加10像素，后面的加8像素
+        }
+
+
+        return height;
+    }
+
     public GuiEMExtraAdvancedFactory(MekanismTileContainer<TileEntityEMExtraAdvancedFactoryBase<?>> container, Inventory inv, Component title) {
-        super(container, inv, title);
+        super(container, inv, title, DEFAULT_IMAGE_WIDTH + container.getTileEntity().tier.imageWidth, imageHeight(container.getTileEntity()));
         tankCount = tile.getTankCount();
         // 根据储罐数量决定gui布局
-        imageHeight += 13 * tankCount;
         inventoryLabelY = 75 + 13 * tankCount;
         if (tile.hasExtraResourceBar()) {
             int num = tile.getBarCount() - 1;
-            imageHeight += 11 + 8 * num;
+
             // 第一个额外资源槽加10像素，后面的加8像素
             inventoryLabelY += 10 + 8 * num;
         }
 
-        imageWidth += tile.tier.imageWidth;
         inventoryLabelX = tile.tier.inventoryLabelX;
 
         titleLabelY = 4;
@@ -71,30 +86,30 @@ public class GuiEMExtraAdvancedFactory extends GuiConfigurableTile<TileEntityEME
         addRenderableWidget(new EMExtraAdvancedFactoryGuiSortingTab(this, tile));
         addRenderableWidget(new GuiVerticalPowerBar(this, tile.getEnergyContainer(), imageWidth - 12, 16, 13 * tankCount + 52))
                 .warning(WarningType.NOT_ENOUGH_ENERGY, tile.getWarningCheck(RecipeError.NOT_ENOUGH_ENERGY, 0));
-        addRenderableWidget(new GuiEnergyTab(this, tile.getEnergyContainer(), tile::getLastUsage));
+        addRenderableWidget(new GuiEnergyTab(this, tile.getEnergyContainerTyped(), tile::getLastUsage));
 
         if (tile.hasExtraResourceBar()) {
             if (tile instanceof TileEntityEMExtraWashingFactory factory) {
-                addRenderableWidget(new GuiFluidBar(this, GuiFluidBar.getProvider(factory.getFluidTankBar(), tile.getFluidTanks(null)), 7, 102,
+                addRenderableWidget(new GuiFluidBar(this, GuiFluidBar.getProvider(factory.getFluidTankBar(), tile.getFluidTanks()), 7, 102,
                         getBarWidth(), 4, true))
                         .warning(WarningType.NO_MATCHING_RECIPE, tile.getWarningCheck(RecipeError.NOT_ENOUGH_SECONDARY_INPUT, 0));
                 dumpButton = addRenderableWidget(new GuiDumpButton<>(this, (TileEntityEMExtraAdvancedFactoryBase<?> & IHasDumpButton) tile, getButtonX(), 102));
             } else if (tile instanceof TileEntityEMExtraPRCFactory factory) {
                 // 出输出化学储罐
-                addRenderableWidget(new GuiChemicalGauge(() -> factory.outputChemicalTank, () -> tile.getChemicalTanks(null), GaugeType.SMALL, this, 6, 44))
+                addRenderableWidget(new GuiChemicalGauge(() -> factory.outputChemicalTank, () -> tile.getChemicalTanks(), GaugeType.SMALL, this, 6, 44))
                         .warning(WarningType.NO_SPACE_IN_OUTPUT, factory.getWarningCheck(TileEntityPressurizedReactingFactory.NOT_ENOUGH_SPACE_GAS_OUTPUT_ERROR, 0));
                 // 化学储罐条
-                addRenderableWidget(new GuiChemicalBar(this, GuiChemicalBar.getProvider(factory.getChemicalTankBar(), tile.getChemicalTanks(null)), 7, 76,
+                addRenderableWidget(new GuiChemicalBar(this, GuiChemicalBar.getProvider(factory.getChemicalTankBar(), tile.getChemicalTanks()), 7, 76,
                         getBarWidth(), 4, true))
                         .warning(WarningType.NO_MATCHING_RECIPE, tile.getWarningCheck(RecipeError.NOT_ENOUGH_SECONDARY_INPUT, 0));
                 // 流体储罐条
-                addRenderableWidget(new GuiFluidBar(this, GuiFluidBar.getProvider(factory.getFluidTankBar(), tile.getFluidTanks(null)), 7, 84,
+                addRenderableWidget(new GuiFluidBar(this, GuiFluidBar.getProvider(factory.getFluidTankBar(), tile.getFluidTanks()), 7, 84,
                         getBarWidth(), 4, true))
                         .warning(WarningType.NO_MATCHING_RECIPE, tile.getWarningCheck(RecipeError.NOT_ENOUGH_SECONDARY_INPUT, 0));
                 // dump按钮
                 dumpButton = addRenderableWidget(new GuiDumpButton<>(this, (TileEntityEMExtraAdvancedFactoryBase<?> & IHasDumpButton) tile, getButtonX(), 76));
             } else {
-                addRenderableWidget(new GuiChemicalBar(this, GuiChemicalBar.getProvider(tile.getChemicalTankBar(), tile.getChemicalTanks(null)),
+                addRenderableWidget(new GuiChemicalBar(this, GuiChemicalBar.getProvider(tile.getChemicalTankBar(), tile.getChemicalTanks()),
                         7, 13 * tankCount + 76, getBarWidth(), 4, true))
                         .warning(WarningType.NO_MATCHING_RECIPE, tile.getWarningCheck(RecipeError.NOT_ENOUGH_SECONDARY_INPUT, 0));
                 dumpButton = addRenderableWidget(new GuiDumpButton<>(this, (TileEntityEMExtraAdvancedFactoryBase<?> & IHasDumpButton) tile, getButtonX(), 13 * tankCount + 76));
@@ -102,7 +117,7 @@ public class GuiEMExtraAdvancedFactory extends GuiConfigurableTile<TileEntityEME
         }
 
         if (tile instanceof TileEntityEMExtraLiquifyingFactory factory) {
-            addRenderableWidget(new GuiFluidGauge(() -> factory.fluidTank, () -> factory.getFluidTanks(null), GaugeType.SMALL, this, 6, 44))
+            addRenderableWidget(new GuiFluidGauge(() -> factory.fluidTank, () -> factory.getFluidTanks(), GaugeType.SMALL, this, 6, 44))
                     .warning(WarningType.NO_MATCHING_RECIPE, factory.getWarningCheck(RecipeError.NOT_ENOUGH_OUTPUT_SPACE, 0));
         }
 
@@ -110,7 +125,7 @@ public class GuiEMExtraAdvancedFactory extends GuiConfigurableTile<TileEntityEME
         if (tile instanceof TileEntityEMExtraItemToChemicalFactory<?> factory) {
             for (int i = 0; i < tile.tier.processes; i++) {
                 int index = i;
-                addRenderableWidget(new GuiChemicalGauge(() -> factory.outputChemicalTanks.get(index), () -> tile.getChemicalTanks(null), GaugeType.SMALL, this, factory.getXPos(index) - 1, 57))
+                addRenderableWidget(new GuiChemicalGauge(() -> factory.outputChemicalTanks.get(index), () -> tile.getChemicalTanks(), GaugeType.SMALL, this, factory.getXPos(index) - 1, 57))
                         .warning(WarningType.NO_SPACE_IN_OUTPUT, factory.getWarningCheck(RecipeError.NOT_ENOUGH_OUTPUT_SPACE, index));
             }
         }
@@ -119,7 +134,7 @@ public class GuiEMExtraAdvancedFactory extends GuiConfigurableTile<TileEntityEME
         if (tile instanceof TileEntityEMExtraChemicalToItemFactory<?> factory) {
             for (int i = 0; i < tile.tier.processes; i++) {
                 int index = i;
-                addRenderableWidget(new GuiChemicalGauge(() -> factory.inputChemicalTanks.get(index), () -> tile.getChemicalTanks(null), GaugeType.SMALL, this, factory.getXPos(index) - 1, 13))
+                addRenderableWidget(new GuiChemicalGauge(() -> factory.inputChemicalTanks.get(index), () -> tile.getChemicalTanks(), GaugeType.SMALL, this, factory.getXPos(index) - 1, 13))
                         .warning(WarningType.NO_MATCHING_RECIPE, factory.getWarningCheck(RecipeError.NOT_ENOUGH_INPUT, index));
             }
         }
@@ -128,9 +143,9 @@ public class GuiEMExtraAdvancedFactory extends GuiConfigurableTile<TileEntityEME
         if (tile instanceof TileEntityEMExtraChemicalToChemicalFactory<?> factory) {
             for (int i = 0; i < tile.tier.processes; i++) {
                 int index = i;
-                addRenderableWidget(new GuiChemicalGauge(() -> factory.inputChemicalTanks.get(index), () -> tile.getChemicalTanks(null), GaugeType.SMALL, this, factory.getXPos(index) - 1, 13))
+                addRenderableWidget(new GuiChemicalGauge(() -> factory.inputChemicalTanks.get(index), () -> tile.getChemicalTanks(), GaugeType.SMALL, this, factory.getXPos(index) - 1, 13))
                         .warning(WarningType.NO_MATCHING_RECIPE, factory.getWarningCheck(RecipeError.NOT_ENOUGH_LEFT_INPUT, index));
-                addRenderableWidget(new GuiChemicalGauge(() -> factory.outputChemicalTanks.get(index), () -> tile.getChemicalTanks(null), GaugeType.SMALL, this, factory.getXPos(index) - 1, 70))
+                addRenderableWidget(new GuiChemicalGauge(() -> factory.outputChemicalTanks.get(index), () -> tile.getChemicalTanks(), GaugeType.SMALL, this, factory.getXPos(index) - 1, 70))
                         .warning(WarningType.NO_SPACE_IN_OUTPUT, factory.getWarningCheck(RecipeError.NOT_ENOUGH_OUTPUT_SPACE, index));
             }
         }
@@ -155,7 +170,7 @@ public class GuiEMExtraAdvancedFactory extends GuiConfigurableTile<TileEntityEME
     }
 
     @Override
-    protected void drawForegroundText(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
+    protected void drawForegroundText(@NotNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
         renderTitleText(guiGraphics);
         renderInventoryText(guiGraphics, dumpButton == null ? getXSize() : dumpButton.getRelativeX());
         super.drawForegroundText(guiGraphics, mouseX, mouseY);

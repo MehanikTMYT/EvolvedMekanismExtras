@@ -20,11 +20,11 @@ public class EMExtraAdvancedFactoryEnergyContainer extends MachineEnergyContaine
         return new EMExtraAdvancedFactoryEnergyContainer(electricBlock.getStorage(), electricBlock.getUsage(), notExternal, ConstantPredicates.alwaysTrue(), tile, listener);
     }
 
-    private EMExtraAdvancedFactoryEnergyContainer(long maxEnergy, long energyPerTick, Predicate<@NotNull AutomationType> canExtract, Predicate<@NotNull AutomationType> canInsert, TileEntityEMExtraAdvancedFactoryBase<?> tile, @Nullable IContentsListener listener) {
+    private EMExtraAdvancedFactoryEnergyContainer(long maxEnergy, int energyPerTick, Predicate<@NotNull AutomationType> canExtract, Predicate<@NotNull AutomationType> canInsert, TileEntityEMExtraAdvancedFactoryBase<?> tile, @Nullable IContentsListener listener) {
         super(maxEnergy, energyPerTick, canExtract, canInsert, tile, listener);
     }
 
-    public long getBaseEnergyPerTick() {
-        return super.getBaseEnergyPerTick() + this.tile.getRecipeEnergyRequired();
+    public int getBaseEnergyPerTick() {
+        return Math.toIntExact(super.getBaseEnergyPerTick() + this.tile.getRecipeEnergyRequired()); // port-26.1.2: energy rate is int
     }
 }

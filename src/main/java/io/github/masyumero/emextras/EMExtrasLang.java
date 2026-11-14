@@ -1,12 +1,11 @@
 package io.github.masyumero.emextras;
 
+// port-26.1.2: adapt MC 26 and Mekanism 10.8 signatures while preserving behavior.
 import lombok.Getter;
-import mekanism.api.annotations.ParametersAreNotNullByDefault;
 import mekanism.api.text.ILangEntry;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 
 @Getter
-@ParametersAreNotNullByDefault
 public enum EMExtrasLang implements ILangEntry {
     TAB("constants", "mod_name");
 

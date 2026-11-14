@@ -1,5 +1,6 @@
 package io.github.masyumero.emextras.common.tile.factory;
 
+// port-26.1.2: migrate removed annotations and Mekanism/MC resource APIs.
 import com.jerry.mekextras.api.recipes.outputs.ExtraOutputHelper;
 
 import io.github.masyumero.emextras.common.inventory.slot.EMExtraFactoryInputInventorySlot;
@@ -10,7 +11,8 @@ import mekanism.api.recipes.cache.CachedRecipe.OperationTracker.RecipeError;
 import mekanism.api.recipes.inputs.IInputHandler;
 import mekanism.api.recipes.inputs.InputHelper;
 import mekanism.api.recipes.outputs.IOutputHandler;
-import mekanism.common.capabilities.holder.slot.InventorySlotHelper;
+import mekanism.common.capabilities.holder.container.MekContainerHelper;
+import mekanism.api.inventory.IInventorySlot;
 import mekanism.common.inventory.warning.WarningTracker.WarningType;
 import mekanism.common.recipe.lookup.monitor.FactoryRecipeCacheLookupMonitor;
 
@@ -27,15 +29,15 @@ import java.util.Set;
 
 public abstract class TileEntityEMExtraItemToItemFactory<RECIPE extends MekanismRecipe<?>> extends TileEntityEMExtraFactory<RECIPE> {
 
-    protected IInputHandler<@NotNull ItemStack>[] inputHandlers;
-    protected IOutputHandler<@NotNull ItemStack>[] outputHandlers;
+    protected IInputHandler<net.minecraft.world.item.Item, @NotNull ItemStack>[] inputHandlers;
+    protected IOutputHandler<net.minecraft.world.item.ItemStackTemplate>[] outputHandlers;
 
     protected TileEntityEMExtraItemToItemFactory(Holder<Block> blockProvider, BlockPos pos, BlockState state, List<RecipeError> errorTypes, Set<RecipeError> globalErrorTypes) {
         super(blockProvider, pos, state, errorTypes, globalErrorTypes);
     }
 
     @Override
-    protected void addSlots(InventorySlotHelper builder, IContentsListener listener, IContentsListener updateSortingListener) {
+    protected void addSlots(MekContainerHelper<IInventorySlot> builder, IContentsListener listener, IContentsListener updateSortingListener) {
         inputHandlers = new IInputHandler[tier.processes];
         outputHandlers = new IOutputHandler[tier.processes];
         processInfoSlots = new ProcessInfo[tier.processes];
@@ -53,8 +55,8 @@ public abstract class TileEntityEMExtraItemToItemFactory<RECIPE extends Mekanism
             // listener directly
             EMExtraFactoryInputInventorySlot inputSlot = EMExtraFactoryInputInventorySlot.create(this, i, outputSlot, recipeCacheLookupMonitors[i], xPos, 13);
             int index = i;
-            builder.addSlot(inputSlot).tracksWarnings(slot -> slot.warning(WarningType.NO_MATCHING_RECIPE, getWarningCheck(RecipeError.NOT_ENOUGH_INPUT, index)));
-            builder.addSlot(outputSlot).tracksWarnings(slot -> slot.warning(WarningType.NO_SPACE_IN_OUTPUT, getWarningCheck(RecipeError.NOT_ENOUGH_OUTPUT_SPACE, index)));
+            builder.addContainer(inputSlot).tracksWarnings(slot -> slot.warning(WarningType.NO_MATCHING_RECIPE, getWarningCheck(RecipeError.NOT_ENOUGH_INPUT, index)));
+            builder.addContainer(outputSlot).tracksWarnings(slot -> slot.warning(WarningType.NO_SPACE_IN_OUTPUT, getWarningCheck(RecipeError.NOT_ENOUGH_OUTPUT_SPACE, index)));
             inputHandlers[i] = InputHelper.getInputHandler(inputSlot, RecipeError.NOT_ENOUGH_INPUT);
             outputHandlers[i] = ExtraOutputHelper.getOutputHandler(outputSlot, RecipeError.NOT_ENOUGH_OUTPUT_SPACE, this::getOperationsPerTick);
             processInfoSlots[i] = new ProcessInfo(i, inputSlot, outputSlot, null);

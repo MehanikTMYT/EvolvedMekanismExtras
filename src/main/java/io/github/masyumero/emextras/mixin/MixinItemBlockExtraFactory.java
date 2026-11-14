@@ -1,9 +1,10 @@
 package io.github.masyumero.emextras.mixin;
 
+// port-26.1.2: migrate removed annotations and Mekanism/MC resource APIs.
 import com.jerry.mekextras.common.block.prefab.BlockExtraFactoryMachine;
 import com.jerry.mekextras.common.item.block.machine.ItemBlockExtraFactory;
 import fr.iglee42.evolvedmekanism.registries.EMFactoryType;
-import mekanism.common.attachments.component.AttachedSideConfig;
+import mekanism.common.component.component.AttachedSideConfig;
 import mekanism.common.block.attribute.Attribute;
 import mekanism.common.block.attribute.AttributeFactoryType;
 import org.spongepowered.asm.mixin.Mixin;

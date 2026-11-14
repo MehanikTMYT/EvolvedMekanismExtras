@@ -1,5 +1,6 @@
 package io.github.masyumero.emextras.common.registry;
 
+// port-26.1.2: adapt MC 26 and Mekanism 10.8 signatures while preserving behavior.
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import com.jerry.mekextras.common.block.attribute.ExtraAttributeUpgradeSupport;
@@ -35,7 +36,7 @@ public class EMExtraBlockTypes {
             .createEMExtraFactoryMachine(() -> EMTileEntityTypes.ALLOYER, EvolvedMekanismLang.DESCRIPTION_ALLOYER, EMFactoryType.ALLOYING)
             .withGui(() -> EMContainerTypes.ALLOYER)
             .withSound(MekanismSounds.COMBINER)
-            .withEnergyConfig(LoadConfig.emExtraUsageConfig.alloyingFactory, LoadConfig.emExtraStorageConfig.alloyingFactory)
+            .withEnergyConfig(() -> mekanism.api.math.MathUtils.clampToInt(LoadConfig.emExtraUsageConfig.alloyingFactory.get()), LoadConfig.emExtraStorageConfig.alloyingFactory::get)
             .with(ExtraAttributeUpgradeSupport.EXTRA_ADVANCED_MACHINE_UPGRADES)
             .build();
 
@@ -43,7 +44,7 @@ public class EMExtraBlockTypes {
             .createExtraFactoryMachine(() -> EMTileEntityTypes.ALLOYER, EvolvedMekanismLang.DESCRIPTION_ALLOYER, EMFactoryType.ALLOYING)
             .withGui(() -> EMContainerTypes.ALLOYER)
             .withSound(MekanismSounds.COMBINER)
-            .withEnergyConfig(LoadConfig.emExtraUsageConfig.alloyingFactory, LoadConfig.emExtraStorageConfig.alloyingFactory)
+            .withEnergyConfig(() -> mekanism.api.math.MathUtils.clampToInt(LoadConfig.emExtraUsageConfig.alloyingFactory.get()), LoadConfig.emExtraStorageConfig.alloyingFactory::get)
             .with(ExtraAttributeUpgradeSupport.EXTRA_ADVANCED_MACHINE_UPGRADES)
             .build();
 
@@ -51,7 +52,7 @@ public class EMExtraBlockTypes {
             .createEMExtraFactoryMachine(() -> MekanismTileEntityTypes.ENERGIZED_SMELTER, MekanismLang.DESCRIPTION_ENERGIZED_SMELTER, FactoryType.SMELTING)
             .withGui(() -> MekanismContainerTypes.ENERGIZED_SMELTER)
             .withSound(MekanismSounds.ENERGIZED_SMELTER)
-            .withEnergyConfig(MekanismConfig.usage.energizedSmelter, MekanismConfig.storage.energizedSmelter)
+            .withEnergyUsage(MekanismConfig.usage.energizedSmelter)
             .with(ExtraAttributeUpgradeSupport.EXTRA_MACHINE_UPGRADES)
             .build();
 
@@ -59,7 +60,7 @@ public class EMExtraBlockTypes {
             .createEMExtraFactoryMachine(() -> MekanismTileEntityTypes.ENRICHMENT_CHAMBER, MekanismLang.DESCRIPTION_ENRICHMENT_CHAMBER, FactoryType.ENRICHING)
             .withGui(() -> MekanismContainerTypes.ENRICHMENT_CHAMBER)
             .withSound(MekanismSounds.ENRICHMENT_CHAMBER)
-            .withEnergyConfig(MekanismConfig.usage.enrichmentChamber, MekanismConfig.storage.enrichmentChamber)
+            .withEnergyUsage(MekanismConfig.usage.enrichmentChamber)
             .with(ExtraAttributeUpgradeSupport.EXTRA_MACHINE_UPGRADES)
             .build();
 
@@ -67,7 +68,7 @@ public class EMExtraBlockTypes {
             .createEMExtraFactoryMachine(() -> MekanismTileEntityTypes.CRUSHER, MekanismLang.DESCRIPTION_CRUSHER, FactoryType.CRUSHING)
             .withGui(() -> MekanismContainerTypes.CRUSHER)
             .withSound(MekanismSounds.CRUSHER)
-            .withEnergyConfig(MekanismConfig.usage.crusher, MekanismConfig.storage.crusher)
+            .withEnergyUsage(MekanismConfig.usage.crusher)
             .with(ExtraAttributeUpgradeSupport.EXTRA_MACHINE_UPGRADES)
             .build();
 
@@ -75,7 +76,7 @@ public class EMExtraBlockTypes {
             .createEMExtraFactoryMachine(() -> MekanismTileEntityTypes.OSMIUM_COMPRESSOR, MekanismLang.DESCRIPTION_OSMIUM_COMPRESSOR, FactoryType.COMPRESSING)
             .withGui(() -> MekanismContainerTypes.OSMIUM_COMPRESSOR)
             .withSound(MekanismSounds.OSMIUM_COMPRESSOR)
-            .withEnergyConfig(MekanismConfig.usage.osmiumCompressor, MekanismConfig.storage.osmiumCompressor)
+            .withEnergyUsage(MekanismConfig.usage.osmiumCompressor)
             .with(ExtraAttributeUpgradeSupport.EXTRA_MACHINE_UPGRADES)
             .build();
 
@@ -83,7 +84,7 @@ public class EMExtraBlockTypes {
             .createEMExtraFactoryMachine(() -> MekanismTileEntityTypes.COMBINER, MekanismLang.DESCRIPTION_COMBINER, FactoryType.COMBINING)
             .withGui(() -> MekanismContainerTypes.COMBINER)
             .withSound(MekanismSounds.COMBINER)
-            .withEnergyConfig(MekanismConfig.usage.combiner, MekanismConfig.storage.combiner)
+            .withEnergyUsage(MekanismConfig.usage.combiner)
             .with(ExtraAttributeUpgradeSupport.EXTRA_MACHINE_UPGRADES)
             .build();
 
@@ -91,7 +92,7 @@ public class EMExtraBlockTypes {
             .createEMExtraFactoryMachine(() -> MekanismTileEntityTypes.PURIFICATION_CHAMBER, MekanismLang.DESCRIPTION_PURIFICATION_CHAMBER, FactoryType.PURIFYING)
             .withGui(() -> MekanismContainerTypes.PURIFICATION_CHAMBER)
             .withSound(MekanismSounds.PURIFICATION_CHAMBER)
-            .withEnergyConfig(MekanismConfig.usage.purificationChamber, MekanismConfig.storage.purificationChamber)
+            .withEnergyUsage(MekanismConfig.usage.purificationChamber)
             .with(ExtraAttributeUpgradeSupport.EXTRA_ADVANCED_MACHINE_UPGRADES)
             .build();
 
@@ -99,7 +100,7 @@ public class EMExtraBlockTypes {
             .createEMExtraFactoryMachine(() -> MekanismTileEntityTypes.CHEMICAL_INJECTION_CHAMBER, MekanismLang.DESCRIPTION_CHEMICAL_INJECTION_CHAMBER, FactoryType.INJECTING)
             .withGui(() -> MekanismContainerTypes.CHEMICAL_INJECTION_CHAMBER)
             .withSound(MekanismSounds.CHEMICAL_INJECTION_CHAMBER)
-            .withEnergyConfig(MekanismConfig.usage.chemicalInjectionChamber, MekanismConfig.storage.chemicalInjectionChamber)
+            .withEnergyUsage(MekanismConfig.usage.chemicalInjectionChamber)
             .with(ExtraAttributeUpgradeSupport.EXTRA_ADVANCED_MACHINE_UPGRADES)
             .build();
 
@@ -107,7 +108,7 @@ public class EMExtraBlockTypes {
             .createEMExtraFactoryMachine(() -> MekanismTileEntityTypes.METALLURGIC_INFUSER, MekanismLang.DESCRIPTION_METALLURGIC_INFUSER, FactoryType.INFUSING)
             .withGui(() -> MekanismContainerTypes.METALLURGIC_INFUSER)
             .withSound(MekanismSounds.METALLURGIC_INFUSER)
-            .withEnergyConfig(MekanismConfig.usage.metallurgicInfuser, MekanismConfig.storage.metallurgicInfuser)
+            .withEnergyUsage(MekanismConfig.usage.metallurgicInfuser)
             .withCustomShape(BlockShapes.METALLURGIC_INFUSER)
             .with(ExtraAttributeUpgradeSupport.EXTRA_MACHINE_UPGRADES)
             .build();
@@ -116,7 +117,7 @@ public class EMExtraBlockTypes {
             .createEMExtraFactoryMachine(() -> MekanismTileEntityTypes.PRECISION_SAWMILL, MekanismLang.DESCRIPTION_PRECISION_SAWMILL, FactoryType.SAWING)
             .withGui(() -> MekanismContainerTypes.PRECISION_SAWMILL)
             .withSound(MekanismSounds.PRECISION_SAWMILL)
-            .withEnergyConfig(MekanismConfig.usage.precisionSawmill, MekanismConfig.storage.precisionSawmill)
+            .withEnergyUsage(MekanismConfig.usage.precisionSawmill)
             .with(ExtraAttributeUpgradeSupport.EXTRA_MACHINE_UPGRADES)
             .build();
 

@@ -1,5 +1,6 @@
 package io.github.masyumero.emextras.common.tile.factory;
 
+// port-26.1.2: migrate removed annotations and Mekanism/MC resource APIs.
 import fr.iglee42.evolvedmekanism.interfaces.EMInputRecipeCache;
 import fr.iglee42.evolvedmekanism.interfaces.ThreeInputCachedRecipe;
 import fr.iglee42.evolvedmekanism.interfaces.TripleItemRecipeLookupHandler;
@@ -19,7 +20,8 @@ import mekanism.api.recipes.ingredients.ItemStackIngredient;
 import mekanism.api.recipes.inputs.IInputHandler;
 import mekanism.api.recipes.inputs.InputHelper;
 import mekanism.common.Mekanism;
-import mekanism.common.capabilities.holder.slot.InventorySlotHelper;
+import mekanism.common.capabilities.holder.container.MekContainerHelper;
+import mekanism.api.inventory.IInventorySlot;
 import mekanism.common.integration.computer.SpecialComputerMethodWrapper.ComputerIInventorySlotWrapper;
 import mekanism.common.integration.computer.annotation.WrappingComputerMethod;
 import mekanism.common.inventory.container.slot.ContainerSlotType;
@@ -59,8 +61,8 @@ public class TileEntityEMExtraAlloyingFactory extends TileEntityEMExtraItemToIte
             RecipeError.NOT_ENOUGH_SECONDARY_INPUT
     );
 
-    private final IInputHandler<@NotNull ItemStack> extraInputHandler;
-    private final IInputHandler<@NotNull ItemStack> secondExtraInputHandler;
+    private final IInputHandler<net.minecraft.world.item.Item, @NotNull ItemStack> extraInputHandler;
+    private final IInputHandler<net.minecraft.world.item.Item, @NotNull ItemStack> secondExtraInputHandler;
 
     @WrappingComputerMethod(wrapper = ComputerIInventorySlotWrapper.class, methodNames = "getSecondaryInput", docPlaceholder = "secondary input slot")
     LimitedInputInventorySlot extraSlot;
@@ -79,15 +81,15 @@ public class TileEntityEMExtraAlloyingFactory extends TileEntityEMExtraItemToIte
     }
 
     @Override
-    protected void addSlots(InventorySlotHelper builder, IContentsListener listener, IContentsListener updateSortingListener) {
+    protected void addSlots(MekContainerHelper<IInventorySlot> builder, IContentsListener listener, IContentsListener updateSortingListener) {
         super.addSlots(builder, listener, updateSortingListener);
         int imageWidth = 176 +(38 *( tier.ordinal() - EMFactoryTier.OVERCLOCKED.ordinal() + 1)) + 9;
         int inventorySize = 9 * 20;
         int endInventory = (imageWidth / 2 + inventorySize / 2) - 10;
         int extraSlotX = tier.ordinal() > FactoryTier.ULTIMATE.ordinal() ? endInventory + 4 : 7;
         int extraSlotY = tier.ordinal() > FactoryTier.ULTIMATE.ordinal() ? 143 : 57;
-        builder.addSlot(extraSlot = LimitedInputInventorySlot.at((tier.ordinal() + 1) * 64,this::containsRecipeB, markAllMonitorsChanged(listener), extraSlotX, extraSlotY));
-        builder.addSlot(secondExtraSlot = LimitedInputInventorySlot.at((tier.ordinal() + 1) * 64, this::containsRecipeC, markAllMonitorsChanged(listener), extraSlotX, extraSlotY - 22));
+        builder.addContainer(extraSlot = LimitedInputInventorySlot.at((tier.ordinal() + 1) * 64,this::containsRecipeB, markAllMonitorsChanged(listener), extraSlotX, extraSlotY));
+        builder.addContainer(secondExtraSlot = LimitedInputInventorySlot.at((tier.ordinal() + 1) * 64, this::containsRecipeC, markAllMonitorsChanged(listener), extraSlotX, extraSlotY - 22));
         extraSlot.setSlotType(ContainerSlotType.EXTRA);
         secondExtraSlot.setSlotType(ContainerSlotType.EXTRA);
     }
@@ -99,36 +101,36 @@ public class TileEntityEMExtraAlloyingFactory extends TileEntityEMExtraItemToIte
     }
 
     @Override
-    public boolean isValidInputItem(@NotNull ItemStack stack) {
+    public boolean isValidInputItem(@NotNull net.neoforged.neoforge.transfer.item.ItemResource stack) {
         return containsRecipeA(stack);
     }
 
     @Override
-    protected int getNeededInput(AlloyerRecipe recipe, ItemStack inputStack) {
+    protected int getNeededInput(AlloyerRecipe recipe, net.neoforged.neoforge.transfer.item.ItemResource inputStack) {
         return MathUtils.clampToInt(recipe.getMainInput().getNeededAmount(inputStack));
     }
 
     @Override
-    public boolean isItemValidForSlot(@NotNull ItemStack stack) {
+    public boolean isItemValidForSlot(@NotNull net.neoforged.neoforge.transfer.item.ItemResource stack) {
         return containsRecipeA(stack);
     }
 
     @Override
-    protected boolean isCachedRecipeValid(@Nullable CachedRecipe<AlloyerRecipe> cached, @NotNull ItemStack stack) {
+    protected boolean isCachedRecipeValid(@Nullable CachedRecipe<AlloyerRecipe> cached, @NotNull net.neoforged.neoforge.transfer.item.ItemResource stack) {
         if (cached != null) {
             AlloyerRecipe cachedRecipe = cached.getRecipe();
-            return cachedRecipe.getMainInput().testType(stack) && (extraSlot.isEmpty() || cachedRecipe.getExtraInput().testType(extraSlot.getStack()));
+            return cachedRecipe.getMainInput().testType(stack) && (extraSlot.isEmpty() || cachedRecipe.getExtraInput().testType(extraSlot.resource()));
         }
         return false;
     }
 
     @Override
-    protected AlloyerRecipe findRecipe(int process, @NotNull ItemStack fallbackInput, @NotNull IInventorySlot outputSlot, @Nullable IInventorySlot secondaryOutputSlot) {
-        ItemStack extra = extraSlot.getStack();
-        ItemStack secondExtra = secondExtraSlot.getStack();
-        ItemStack output = outputSlot.getStack();
-        return ((EMInputRecipeCache.IFindRecipes<ItemStack, ItemStackIngredient, ItemStack, ItemStackIngredient, ItemStack, ItemStackIngredient, AlloyerRecipe, ItemInputCache<AlloyerRecipe>, ItemInputCache<AlloyerRecipe>, ItemInputCache<AlloyerRecipe>>) getRecipeType().getInputCache())
-                .findTypeBasedRecipe(level, fallbackInput, extra, secondExtra, recipe -> InventoryUtils.areItemsStackable(recipe.getOutput(fallbackInput, extra, secondExtra), output));
+    protected AlloyerRecipe findRecipe(int process, @NotNull net.neoforged.neoforge.transfer.item.ItemResource fallbackInput, @NotNull IInventorySlot outputSlot, @Nullable IInventorySlot secondaryOutputSlot) {
+        ItemStack extra = extraSlot.resource().toStack(extraSlot.amountAsInt());
+        ItemStack secondExtra = secondExtraSlot.resource().toStack(secondExtraSlot.amountAsInt());
+        net.neoforged.neoforge.transfer.item.ItemResource output = outputSlot.resource();
+        return ((EMInputRecipeCache.IFindRecipes<net.minecraft.world.item.Item, ItemStack, ItemStackIngredient, net.minecraft.world.item.Item, ItemStack, ItemStackIngredient, net.minecraft.world.item.Item, ItemStack, ItemStackIngredient, AlloyerRecipe, ItemInputCache<AlloyerRecipe>, ItemInputCache<AlloyerRecipe>, ItemInputCache<AlloyerRecipe>>) getRecipeType().getInputCache())
+                .findTypeBasedRecipe(level, fallbackInput.toStack(), extra, secondExtra, recipe -> InventoryUtils.areItemsStackable(recipe.getOutput(fallbackInput.toStack(), extra, secondExtra), output));
     }
 
 
@@ -147,7 +149,7 @@ public class TileEntityEMExtraAlloyingFactory extends TileEntityEMExtraItemToIte
     @NotNull
     @Override
     public CachedRecipe<AlloyerRecipe> createNewCachedRecipe(@NotNull AlloyerRecipe recipe, int cacheIndex) {
-        return ThreeInputCachedRecipe.alloyer(recipe, recheckAllRecipeErrors[cacheIndex], inputHandlers[cacheIndex], extraInputHandler, secondExtraInputHandler, outputHandlers[cacheIndex])
+        return ThreeInputCachedRecipe.alloyer(recipe, recheckAllRecipeErrors[cacheIndex], inputHandlers[cacheIndex], extraInputHandler, secondExtraInputHandler, new LegacyAlloyerOutput(outputHandlers[cacheIndex]))
                 .setErrorsChanged(errors -> errorTracker.onErrorsChanged(errors, cacheIndex))
                 .setCanHolderFunction(this::canFunction)
                 .setActive(active -> setActiveState(active, cacheIndex))
@@ -159,13 +161,13 @@ public class TileEntityEMExtraAlloyingFactory extends TileEntityEMExtraItemToIte
     }
 
     @Override
-    public void parseUpgradeData(HolderLookup.Provider provider,@NotNull IUpgradeData upgradeData) {
+    public void parseUpgradeData(IUpgradeData upgradeData, HolderLookup.Provider provider, net.neoforged.neoforge.transfer.transaction.TransactionContext transaction) {
         if (upgradeData instanceof AlloyerUpgradeData data) {
             //Generic factory upgrade data handling
-            super.parseUpgradeData(provider,upgradeData);
+            super.parseUpgradeData(upgradeData, provider, transaction);
             //Copy the stack using NBT so that if it is not actually valid due to a reload we don't crash
-            extraSlot.deserializeNBT(provider,data.extraSlot.serializeNBT(provider));
-            secondExtraSlot.deserializeNBT(provider,data.secondaryExtraSlot.serializeNBT(provider));
+            extraSlot.copyContents(data.extraSlot, transaction);
+            secondExtraSlot.copyContents(data.secondaryExtraSlot, transaction);
         } else {
             Mekanism.logger.warn("Unhandled upgrade data.", new Throwable());
         }

@@ -1,5 +1,7 @@
 package io.github.masyumero.emextras.common.integration.mekaf.tile.factory;
 
+import net.neoforged.neoforge.transfer.item.ItemResource;
+import mekanism.api.chemical.ChemicalResource;
 import com.jerry.mekaf.common.upgrade.ChemicalToItemUpgradeData;
 import io.github.masyumero.emextras.common.integration.mekaf.tile.factory.base.TileEntityEMExtraChemicalToItemFactory;
 import mekanism.api.chemical.ChemicalStack;
@@ -34,7 +36,8 @@ import java.util.Set;
 
 public class TileEntityEMExtraCrystallizingFactory extends TileEntityEMExtraChemicalToItemFactory<ChemicalCrystallizerRecipe> implements ChemicalRecipeLookupHandler<ChemicalCrystallizerRecipe> {
 
-    protected static final TriPredicate<ChemicalCrystallizerRecipe, ChemicalStack, ItemStack> OUTPUT_CHECK = (recipe, input, output) -> InventoryUtils.areItemsStackable(recipe.getOutput(input), output);
+    // port-26.1.2: compare resource identities against recipe output templates.
+    protected static final TriPredicate<ChemicalCrystallizerRecipe, ChemicalResource, ItemResource> OUTPUT_CHECK = (recipe, input, output) -> output.isEmpty() || output.matches(recipe.getOutput(input));
     private static final List<RecipeError> TRACKED_ERROR_TYPES = List.of(
             RecipeError.NOT_ENOUGH_ENERGY,
             RecipeError.NOT_ENOUGH_INPUT,
@@ -44,32 +47,32 @@ public class TileEntityEMExtraCrystallizingFactory extends TileEntityEMExtraChem
 
     public TileEntityEMExtraCrystallizingFactory(Holder<Block> blockProvider, BlockPos pos, BlockState state) {
         super(blockProvider, pos, state, TRACKED_ERROR_TYPES, GLOBAL_ERROR_TYPES);
-        ejectorComponent = new TileComponentEjector(this);
+        // port-26.1.2: superclass initializes ejector.
         ejectorComponent.setOutputData(configComponent, TransmissionType.ITEM);
     }
 
     @Override
-    protected boolean isCachedRecipeValid(@Nullable CachedRecipe<ChemicalCrystallizerRecipe> cached, @NotNull ChemicalStack stack) {
+    protected boolean isCachedRecipeValid(@Nullable CachedRecipe<ChemicalCrystallizerRecipe> cached, @NotNull mekanism.api.chemical.ChemicalResource stack) {
         return cached != null && cached.getRecipe().getInput().testType(stack);
     }
 
     @Override
-    protected @Nullable ChemicalCrystallizerRecipe findRecipe(int process, @NotNull ChemicalStack fallbackInput, @NotNull IInventorySlot outputSlot) {
-        return getRecipeType().getInputCache().findTypeBasedRecipe(level, fallbackInput, outputSlot.getStack(), OUTPUT_CHECK);
+    protected @Nullable ChemicalCrystallizerRecipe findRecipe(int process, @NotNull mekanism.api.chemical.ChemicalResource fallbackInput, @NotNull IInventorySlot outputSlot) {
+        return getRecipeType().getInputCache().findTypeBasedRecipe(level, fallbackInput, outputSlot.resource(), OUTPUT_CHECK);
     }
 
     @Override
-    public boolean isChemicalValidForTank(@NotNull ChemicalStack stack) {
+    public boolean isChemicalValidForTank(@NotNull mekanism.api.chemical.ChemicalResource stack) {
         return containsRecipe(stack);
     }
 
     @Override
-    public boolean isValidInputChemical(@NotNull ChemicalStack stack) {
+    public boolean isValidInputChemical(@NotNull mekanism.api.chemical.ChemicalResource stack) {
         return containsRecipe(stack);
     }
 
     @Override
-    protected int getNeededInput(ChemicalCrystallizerRecipe recipe, ChemicalStack inputStack) {
+    protected int getNeededInput(ChemicalCrystallizerRecipe recipe, mekanism.api.chemical.ChemicalResource inputStack) {
         return MathUtils.clampToInt(recipe.getInput().getNeededAmount(inputStack));
     }
 
@@ -90,7 +93,7 @@ public class TileEntityEMExtraCrystallizingFactory extends TileEntityEMExtraChem
 
     @Override
     public @NotNull CachedRecipe<ChemicalCrystallizerRecipe> createNewCachedRecipe(@NotNull ChemicalCrystallizerRecipe recipe, int cacheIndex) {
-        return OneInputCachedRecipe.crystallizing(recipe, recheckAllRecipeErrors[cacheIndex], chemicalInputHandlers[cacheIndex], itemOutputHandlers[cacheIndex])
+        return new OneInputCachedRecipe<>(recipe, recheckAllRecipeErrors[cacheIndex], chemicalInputHandlers[cacheIndex], itemOutputHandlers[cacheIndex])
                 .setErrorsChanged(errors -> errorTracker.onErrorsChanged(errors, cacheIndex))
                 .setCanHolderFunction(this::canFunction)
                 .setActive(active -> setActiveState(active, cacheIndex))
@@ -104,6 +107,6 @@ public class TileEntityEMExtraCrystallizingFactory extends TileEntityEMExtraChem
     @Override
     public @Nullable IUpgradeData getUpgradeData(HolderLookup.Provider provider) {
         return new ChemicalToItemUpgradeData(provider, redstone, getControlType(), getEnergyContainer(),
-                progress, energySlot, inputChemicalTanks, outputItemSlots, isSorting(), getComponents());
+                progress, energySlot, inputChemicalTanks, outputItemSlots, isSorting(), getComponents(), problemPath());
     }
 }

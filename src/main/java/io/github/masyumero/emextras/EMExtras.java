@@ -1,5 +1,6 @@
 package io.github.masyumero.emextras;
 
+// port-26.1.2: adapt MC 26 and Mekanism 10.8 signatures while preserving behavior.
 import com.mojang.logging.LogUtils;
 import io.github.masyumero.emextras.common.config.LoadConfig;
 import io.github.masyumero.emextras.common.integration.EMExtraHooks;
@@ -14,7 +15,7 @@ import io.github.masyumero.emextras.common.registry.*;
 import mekanism.common.base.IModModule;
 import mekanism.common.content.blocktype.FactoryType;
 import mekanism.common.lib.Version;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -81,8 +82,8 @@ public class EMExtras implements IModModule {
         return instance.emExtraPacketHandler;
     }
 
-    public static ResourceLocation rl(String path) {
-        return ResourceLocation.fromNamespaceAndPath(MODID, path);
+    public static Identifier rl(String path) {
+        return Identifier.fromNamespaceAndPath(MODID, path);
     }
 
     @Override

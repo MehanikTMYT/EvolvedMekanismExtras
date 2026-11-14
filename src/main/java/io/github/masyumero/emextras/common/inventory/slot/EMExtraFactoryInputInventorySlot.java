@@ -1,5 +1,6 @@
 package io.github.masyumero.emextras.common.inventory.slot;
 
+// port-26.1.2: adapt MC 26 and Mekanism 10.8 signatures while preserving behavior.
 import io.github.masyumero.emextras.common.tile.factory.TileEntityEMExtraFactory;
 import mekanism.api.IContentsListener;
 import mekanism.api.inventory.IInventorySlot;
@@ -28,21 +29,21 @@ public class EMExtraFactoryInputInventorySlot extends InputInventorySlot {
 
     private EMExtraFactoryInputInventorySlot(TileEntityEMExtraFactory<?> factory, int process, IInventorySlot outputSlot, @Nullable IInventorySlot secondaryOutputSlot,
                                            @Nullable IContentsListener listener, int x, int y) {
-        super(stack -> factory.isItemValidForSlot(stack) && factory.inputProducesOutput(process, stack, outputSlot, secondaryOutputSlot, false),
-                factory::isValidInputItem, listener, x, y);
+        super(net.minecraft.world.item.Item.ABSOLUTE_MAX_STACK_SIZE, (stack, automationType) -> factory.isItemValidForSlot(stack) && factory.inputProducesOutput(process, stack, outputSlot, secondaryOutputSlot, false),
+                factory::isValidInputItem, null, null, listener, x, y);
         this.factory = factory;
     }
 
     @Override
-    public int getLimit(@NotNull ItemStack stack) {
+    public long capacityAsLong(@NotNull net.neoforged.neoforge.transfer.item.ItemResource stack) {
         if (factory != null) {
             return switch (factory.tier) {
-                case ABSOLUTE_OVERCLOCKED -> super.getLimit(stack) * 8;
-                case SUPREME_QUANTUM -> super.getLimit(stack) * 16;
-                case COSMIC_DENSE -> super.getLimit(stack) * 32;
-                case INFINITE_MULTIVERSAL -> super.getLimit(stack) * 64;
+                case ABSOLUTE_OVERCLOCKED -> super.capacityAsLong(stack) * 8;
+                case SUPREME_QUANTUM -> super.capacityAsLong(stack) * 16;
+                case COSMIC_DENSE -> super.capacityAsLong(stack) * 32;
+                case INFINITE_MULTIVERSAL -> super.capacityAsLong(stack) * 64;
             };
         }
-        return super.getLimit(stack);
+        return super.capacityAsLong(stack);
     }
 }

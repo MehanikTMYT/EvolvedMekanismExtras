@@ -15,8 +15,12 @@ import irislgtm.mto.MTOModClient;
 import mekanism.api.tier.BaseTier;
 import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
 
+// port-26.1.2: MTO (mekanismtieredoutlines) не входит в сборку флота — @Pseudo,
+// чтобы без установленного мода миксин молча пропускался, а не ронял клиент.
+@Pseudo
 @Mixin(value = MTOModClient.class, remap = false)
 public class MixinMTOModClient {
 
@@ -24,7 +28,7 @@ public class MixinMTOModClient {
     @Expression("tier != null")
     @ModifyExpressionValue(method = "onBlockHighlight", at = @At(value = "MIXINEXTRAS:EXPRESSION"))
     private boolean onBlockHighlightModifyExpressionValue(boolean original, @Local(name = "state") BlockState state, @Share("emExtraTier") LocalRef<EMExtraTier> emExtraTierRef) {
-        EMExtraTier emExtraTier = EMExtraAttribute.getEMExtraTier(state.getBlockHolder());
+        EMExtraTier emExtraTier = EMExtraAttribute.getEMExtraTier(state.getBlock().builtInRegistryHolder());
         emExtraTierRef.set(emExtraTier);
         return original || emExtraTier != null;
     }

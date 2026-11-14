@@ -1,5 +1,6 @@
 package io.github.masyumero.emextras.common.integration.mekmm.registries;
 
+// port-26.1.2: migrate removed annotations and Mekanism/MC resource APIs.
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import com.jerry.mekmm.common.content.blocktype.MoreMachineFactoryType;
@@ -18,9 +19,9 @@ import io.github.masyumero.emextras.common.integration.mekmm.item.block.machine.
 import io.github.masyumero.emextras.common.integration.mekmm.tile.factory.TileEntityEMExtraMoreMachineFactory;
 import io.github.masyumero.emextras.common.tier.EMExtraFactoryTier;
 import io.github.masyumero.emextras.common.util.EMExtraEnumUtils;
-import mekanism.common.attachments.containers.ContainerType;
-import mekanism.common.attachments.containers.chemical.ChemicalTanksBuilder;
-import mekanism.common.attachments.containers.item.ItemSlotsBuilder;
+import mekanism.common.component.containers.type.ContainerType;
+import mekanism.common.component.containers.chemical.ChemicalTanksBuilder;
+import mekanism.common.component.containers.item.ItemSlotsBuilder;
 import mekanism.common.recipe.MekanismRecipeType;
 import mekanism.common.recipe.lookup.cache.InputRecipeCache;
 import mekanism.common.registration.impl.BlockDeferredRegister;
@@ -56,10 +57,10 @@ public class EMExtraMoreMachineBlocks {
 
     private static <TILE extends TileEntityEMExtraMoreMachineFactory<?>> BlockRegistryObject<EMExtraMoreMachineBlockFactoryMachine.BlockEMExtraMoreMachineFactory<?>, ItemBlockEMExtraMoreMachineFactory> registerMoreMachineFactory(EMExtraMoreMachineFactory<TILE> type) {
         EMExtraFactoryTier tier = (EMExtraFactoryTier) Objects.requireNonNull(type.get(EMExtraAttributeTier.class)).tier();
-        BlockRegistryObject<EMExtraMoreMachineBlockFactoryMachine.BlockEMExtraMoreMachineFactory<?>, ItemBlockEMExtraMoreMachineFactory> factory = registerTieredBlock(tier, "_" + type.getMoreMachineFactoryType().getRegistryNameComponent() + "_factory", () -> new EMExtraMoreMachineBlockFactoryMachine.BlockEMExtraMoreMachineFactory<>(type), ItemBlockEMExtraMoreMachineFactory::new);
+        BlockRegistryObject<EMExtraMoreMachineBlockFactoryMachine.BlockEMExtraMoreMachineFactory<?>, ItemBlockEMExtraMoreMachineFactory> factory = registerTieredBlock(tier, "_" + type.getMoreMachineFactoryType().getRegistryNameComponent() + "_factory", properties -> new EMExtraMoreMachineBlockFactoryMachine.BlockEMExtraMoreMachineFactory<>(type, properties), ItemBlockEMExtraMoreMachineFactory::new);
         factory.forItemHolder(holder -> {
             int processes = tier.processes;
-            Predicate<ItemStack> recipeInputPredicate = switch (type.getMoreMachineFactoryType()) {
+            Predicate<net.neoforged.neoforge.transfer.item.ItemResource> recipeInputPredicate = switch (type.getMoreMachineFactoryType()) {
                 case RECYCLING -> s -> MoreMachineRecipeType.RECYCLING.getInputCache().containsInput(null, s);
                 case PLANTING_STATION -> s -> MoreMachineRecipeType.PLANTING_STATION.getInputCache().containsInputA(null, s);
                 case CNC_STAMPING -> s -> MoreMachineRecipeType.STAMPING.getInputCache().containsInputA(null, s);
@@ -109,7 +110,7 @@ public class EMExtraMoreMachineBlocks {
     }
 
     private static <BLOCK extends Block, ITEM extends BlockItem> BlockRegistryObject<BLOCK, ITEM> registerTieredBlock(IEMExtraTier tier, String suffix,
-                                                                                                                      Supplier<? extends BLOCK> blockSupplier, BiFunction<BLOCK, Item.Properties, ITEM> itemCreator) {
+                                                                                                                      java.util.function.Function<net.minecraft.world.level.block.state.BlockBehaviour.Properties, ? extends BLOCK> blockSupplier, BiFunction<BLOCK, Item.Properties, ITEM> itemCreator) {
         return MM_BLOCKS.register(tier.getEMExtraTier().getLowerName() + suffix, blockSupplier, itemCreator);
     }
 

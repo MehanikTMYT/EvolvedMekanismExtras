@@ -1,5 +1,6 @@
 package io.github.masyumero.emextras.common.integration.mekaf.registries;
 
+// port-26.1.2: migrate removed annotations and Mekanism/MC resource APIs.
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import com.jerry.mekaf.common.attachments.containers.chemical.AFChemicalTanksBuilder;
@@ -18,9 +19,9 @@ import io.github.masyumero.emextras.common.integration.mekaf.tile.factory.base.T
 import io.github.masyumero.emextras.common.tier.EMExtraFactoryTier;
 import io.github.masyumero.emextras.common.util.EMExtraEnumUtils;
 import mekanism.api.chemical.ChemicalStack;
-import mekanism.common.attachments.containers.ContainerType;
-import mekanism.common.attachments.containers.fluid.FluidTanksBuilder;
-import mekanism.common.attachments.containers.item.ItemSlotsBuilder;
+import mekanism.common.component.containers.type.ContainerType;
+import mekanism.common.component.containers.fluid.FluidTanksBuilder;
+import mekanism.common.component.containers.item.ItemSlotsBuilder;
 import mekanism.common.recipe.MekanismRecipeType;
 import mekanism.common.recipe.lookup.cache.InputRecipeCache;
 import mekanism.common.registration.impl.BlockDeferredRegister;
@@ -56,19 +57,19 @@ public class EMExtraAdvancedFactoryBlocks {
 
     private static <TILE extends TileEntityEMExtraAdvancedFactoryBase<?>> BlockRegistryObject<BlockEMExtraAdvancedFactory<?>, ItemBlockEMExtraAdvancedFactory> registerAdvancedFactory(EMExtraAdvancedFactory<TILE> type) {
         EMExtraFactoryTier tier = (EMExtraFactoryTier) Objects.requireNonNull(type.get(EMExtraAttributeTier.class)).tier();
-        BlockRegistryObject<BlockEMExtraAdvancedFactory<?>, ItemBlockEMExtraAdvancedFactory> factory = registerTieredBlock(tier, "_" + type.getAdvancedFactoryType().getRegistryNameComponent() + "_factory", () -> new BlockEMExtraAdvancedFactory<>(type), ItemBlockEMExtraAdvancedFactory::new);
+        BlockRegistryObject<BlockEMExtraAdvancedFactory<?>, ItemBlockEMExtraAdvancedFactory> factory = registerTieredBlock(tier, "_" + type.getAdvancedFactoryType().getRegistryNameComponent() + "_factory", properties -> new BlockEMExtraAdvancedFactory<>(type, properties), ItemBlockEMExtraAdvancedFactory::new);
         factory.forItemHolder(holder -> {
             int processes = tier.processes;
-            Predicate<ItemStack> recipeItemInputPredicate = switch (type.getAdvancedFactoryType()) {
+            Predicate<net.neoforged.neoforge.transfer.item.ItemResource> recipeItemInputPredicate = switch (type.getAdvancedFactoryType()) {
                 case OXIDIZING -> s -> MekanismRecipeType.OXIDIZING.getInputCache().containsInput(null, s);
                 case DISSOLVING -> s -> MekanismRecipeType.DISSOLUTION.getInputCache().containsInputA(null, s);
                 case PRESSURISED_REACTING -> s -> MekanismRecipeType.REACTION.getInputCache().containsInputA(null, s);
-                case LIQUIFYING -> TileEntityLiquifyingFactory::isValidInputStatic;
+                case LIQUIFYING -> resource -> TileEntityLiquifyingFactory.isValidInputStatic(resource.toStack());
                 case PIGMENT_EXTRACTING -> s -> MekanismRecipeType.PIGMENT_EXTRACTING.getInputCache().containsInput(null, s);
                 case PAINTING -> s -> MekanismRecipeType.PAINTING.getInputCache().containsInputA(null, s);
                 default -> null;
             };
-            Predicate<ChemicalStack> recipeChemicalInputPredicate = switch (type.getAdvancedFactoryType()) {
+            Predicate<mekanism.api.chemical.ChemicalResource> recipeChemicalInputPredicate = switch (type.getAdvancedFactoryType()) {
                 case DISSOLVING -> s -> MekanismRecipeType.DISSOLUTION.getInputCache().containsInputB(null, s);
                 case WASHING -> s -> MekanismRecipeType.WASHING.getInputCache().containsInputB(null, s);
                 case CRYSTALLIZING -> s -> MekanismRecipeType.CRYSTALLIZING.getInputCache().containsInput(null, s);
@@ -176,7 +177,7 @@ public class EMExtraAdvancedFactoryBlocks {
     }
 
     private static <BLOCK extends Block, ITEM extends BlockItem> BlockRegistryObject<BLOCK, ITEM> registerTieredBlock(IEMExtraTier tier, String suffix,
-                                                                                                                      Supplier<? extends BLOCK> blockSupplier, BiFunction<BLOCK, Item.Properties, ITEM> itemCreator) {
+                                                                                                                      java.util.function.Function<net.minecraft.world.level.block.state.BlockBehaviour.Properties, ? extends BLOCK> blockSupplier, BiFunction<BLOCK, Item.Properties, ITEM> itemCreator) {
         return AF_BLOCKS.register(tier.getEMExtraTier().getLowerName() + suffix, blockSupplier, itemCreator);
     }
 

@@ -1,5 +1,6 @@
 package io.github.masyumero.emextras.common.integration.mekaf.item.block.machine;
 
+// port-26.1.2: migrate removed annotations and Mekanism/MC resource APIs.
 import com.jerry.mekaf.common.block.attribute.AttributeAdvancedFactoryType;
 import io.github.masyumero.emextras.common.block.attribute.EMExtraAttribute;
 import io.github.masyumero.emextras.common.block.prefab.BlockEMExtraAdvancedFactoryMachine;
@@ -7,8 +8,8 @@ import io.github.masyumero.emextras.common.item.block.ItemBlockEMExtraTooltip;
 import io.github.masyumero.emextras.common.tier.EMExtraFactoryTier;
 import mekanism.api.text.EnumColor;
 import mekanism.common.MekanismLang;
-import mekanism.common.attachments.component.AttachedEjector;
-import mekanism.common.attachments.component.AttachedSideConfig;
+import mekanism.common.component.component.AttachedEjector;
+import mekanism.common.component.component.AttachedSideConfig;
 import mekanism.common.block.attribute.Attribute;
 import mekanism.common.block.prefab.BlockTile;
 import mekanism.common.registries.MekanismDataComponents;
@@ -49,12 +50,12 @@ public class ItemBlockEMExtraAdvancedFactory extends ItemBlockEMExtraTooltip<Blo
     }
 
     @Override
-    protected void addTypeDetails(@NotNull ItemStack stack, @NotNull Item.TooltipContext context, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
+    protected void addTypeDetails(@NotNull ItemStack stack, net.neoforged.neoforge.transfer.access.ItemAccess itemAccess, @NotNull Item.TooltipContext context, net.minecraft.world.item.component.TooltipDisplay tooltipDisplay, java.util.function.Consumer<Component> tooltip, @NotNull TooltipFlag flag) {
         // Should always be present but validate it just in case
         AttributeAdvancedFactoryType factoryType = Attribute.get(getBlock(), AttributeAdvancedFactoryType.class);
         if (factoryType != null) {
-            tooltip.add(MekanismLang.FACTORY_TYPE.translateColored(EnumColor.INDIGO, EnumColor.GRAY, factoryType.getAdvancedFactoryType()));
+            tooltip.accept(MekanismLang.FACTORY_TYPE.translateColored(EnumColor.INDIGO, EnumColor.GRAY, factoryType.getAdvancedFactoryType()));
         }
-        super.addTypeDetails(stack, context, tooltip, flag);
+        super.addTypeDetails(stack, itemAccess, context, tooltipDisplay, tooltip, flag);
     }
 }

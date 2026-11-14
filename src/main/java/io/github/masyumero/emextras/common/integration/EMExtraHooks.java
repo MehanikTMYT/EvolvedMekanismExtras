@@ -1,6 +1,7 @@
 package io.github.masyumero.emextras.common.integration;
 
-import net.minecraft.resources.ResourceLocation;
+// port-26.1.2: adapt MC 26 and Mekanism 10.8 signatures while preserving behavior.
+import net.minecraft.resources.Identifier;
 import net.neoforged.fml.InterModComms;
 import net.neoforged.fml.ModList;
 
@@ -19,8 +20,8 @@ public class EMExtraHooks {
             InterModComms.sendTo(modid, method, toSend);
         }
 
-        public ResourceLocation rl(String path) {
-            return ResourceLocation.fromNamespaceAndPath(modid, path);
+        public Identifier rl(String path) {
+            return Identifier.fromNamespaceAndPath(modid, path);
         }
 
         public void assertLoaded() {

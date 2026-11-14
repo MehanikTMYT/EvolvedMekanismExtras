@@ -1,5 +1,6 @@
 package io.github.masyumero.emextras.common.integration.mekmm.registries;
 
+// port-26.1.2: adapt MC 26 and Mekanism 10.8 signatures while preserving behavior.
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import com.jerry.mekextras.common.block.attribute.ExtraAttributeUpgradeSupport;
@@ -29,7 +30,7 @@ public class EMExtraMoreMachineBlockTypes {
             .createEMExtraMoreMachineFactoryMachine(() -> MoreMachineTileEntityTypes.RECYCLER, MoreMachineLang.DESCRIPTION_RECYCLER, MoreMachineFactoryType.RECYCLING)
             .withGui(() -> MoreMachineContainerTypes.RECYCLER)
             .withSound(MekanismSounds.PRECISION_SAWMILL)
-            .withEnergyConfig(MoreMachineConfig.usage.recycler, MoreMachineConfig.storage.recycler)
+            .withEnergyConfig(() -> mekanism.api.math.MathUtils.clampToInt(MoreMachineConfig.usage.recycler.get()), MoreMachineConfig.storage.recycler::get)
             .with(ExtraAttributeUpgradeSupport.EXTRA_MACHINE_NO_STACK_UPGRADES)
             .build();
 
@@ -37,7 +38,7 @@ public class EMExtraMoreMachineBlockTypes {
     public static final EMExtraMachine.EMExtraFactoryMachine<TileEntityPlantingStation> PLANTING_STATION = EMExtraMachine.EMExtraMachineBuilder
             .createEMExtraMoreMachineFactoryMachine(() -> MoreMachineTileEntityTypes.PLANTING_STATION, MoreMachineLang.DESCRIPTION_PLANTING_STATION, MoreMachineFactoryType.PLANTING_STATION)
             .withGui(() -> MoreMachineContainerTypes.PLANTING_STATION)
-            .withEnergyConfig(MoreMachineConfig.usage.plantingStation, MoreMachineConfig.storage.plantingStation)
+            .withEnergyConfig(() -> mekanism.api.math.MathUtils.clampToInt(MoreMachineConfig.usage.plantingStation.get()), MoreMachineConfig.storage.plantingStation::get)
             .with(ExtraAttributeUpgradeSupport.EXTRA_ADVANCED_MACHINE_UPGRADES)
             .withSound(MekanismSounds.ENRICHMENT_CHAMBER)
             .with(AttributeHasBounding.ABOVE_ONLY)
@@ -47,7 +48,7 @@ public class EMExtraMoreMachineBlockTypes {
     public static final EMExtraMachine.EMExtraFactoryMachine<TileEntityStamper> CNC_STAMPER = EMExtraMachine.EMExtraMachineBuilder
             .createEMExtraMoreMachineFactoryMachine(() -> MoreMachineTileEntityTypes.CNC_STAMPER, MoreMachineLang.DESCRIPTION_CNC_STAMPER, MoreMachineFactoryType.CNC_STAMPING)
             .withGui(() -> MoreMachineContainerTypes.CNC_STAMPER)
-            .withEnergyConfig(MoreMachineConfig.usage.cnc_stamper, MoreMachineConfig.storage.cnc_stamper)
+            .withEnergyConfig(() -> mekanism.api.math.MathUtils.clampToInt(MoreMachineConfig.usage.cnc_stamper.get()), MoreMachineConfig.storage.cnc_stamper::get)
             .with(ExtraAttributeUpgradeSupport.EXTRA_MACHINE_UPGRADES)
             .withSound(MekanismSounds.CRUSHER)
             .build();
@@ -56,7 +57,7 @@ public class EMExtraMoreMachineBlockTypes {
     public static final EMExtraMachine.EMExtraFactoryMachine<TileEntityLathe> CNC_LATHE = EMExtraMachine.EMExtraMachineBuilder
             .createEMExtraMoreMachineFactoryMachine(() -> MoreMachineTileEntityTypes.CNC_LATHE, MoreMachineLang.DESCRIPTION_CNC_LATHE, MoreMachineFactoryType.CNC_LATHING)
             .withGui(() -> MoreMachineContainerTypes.CNC_LATHE)
-            .withEnergyConfig(MoreMachineConfig.usage.cnc_lathe, MoreMachineConfig.storage.cnc_lathe)
+            .withEnergyConfig(() -> mekanism.api.math.MathUtils.clampToInt(MoreMachineConfig.usage.cnc_lathe.get()), MoreMachineConfig.storage.cnc_lathe::get)
             .with(ExtraAttributeUpgradeSupport.EXTRA_MACHINE_UPGRADES)
             .withSound(MekanismSounds.OSMIUM_COMPRESSOR)
             .build();
@@ -65,7 +66,7 @@ public class EMExtraMoreMachineBlockTypes {
     public static final EMExtraMachine.EMExtraFactoryMachine<TileEntityRollingMill> CNC_ROLLING_MILL = EMExtraMachine.EMExtraMachineBuilder
             .createEMExtraMoreMachineFactoryMachine(() -> MoreMachineTileEntityTypes.CNC_ROLLING_MILL, MoreMachineLang.DESCRIPTION_CNC_ROLLING_MILL, MoreMachineFactoryType.CNC_ROLLING_MILL)
             .withGui(() -> MoreMachineContainerTypes.CNC_ROLLING_MILL)
-            .withEnergyConfig(MoreMachineConfig.usage.cnc_rollingMill, MoreMachineConfig.storage.cnc_rollingMill)
+            .withEnergyConfig(() -> mekanism.api.math.MathUtils.clampToInt(MoreMachineConfig.usage.cnc_rollingMill.get()), MoreMachineConfig.storage.cnc_rollingMill::get)
             .with(ExtraAttributeUpgradeSupport.EXTRA_MACHINE_UPGRADES)
             .withSound(MekanismSounds.COMBINER)
             .build();
@@ -75,7 +76,7 @@ public class EMExtraMoreMachineBlockTypes {
             .createEMExtraMoreMachineFactoryMachine(() -> MoreMachineTileEntityTypes.PRESSER, MoreMachineLang.DESCRIPTION_PRESSER, MoreMachineFactoryType.PRESSING)
             .withGui(() -> MoreMachineContainerTypes.PRESSER)
             .withSound(MekanismSounds.COMBINER)
-            .withEnergyConfig(MoreMachineConfig.usage.presser, MoreMachineConfig.storage.presser)
+            .withEnergyConfig(() -> mekanism.api.math.MathUtils.clampToInt(MoreMachineConfig.usage.presser.get()), MoreMachineConfig.storage.presser::get)
             .with(AttributeSideConfig.ELECTRIC_MACHINE)
             .withComputerSupport("presser")
             .build();
@@ -84,7 +85,7 @@ public class EMExtraMoreMachineBlockTypes {
     public static final EMExtraMachine.EMExtraFactoryMachine<TileEntityReplicator> REPLICATOR = EMExtraMachine.EMExtraMachineBuilder
             .createEMExtraMoreMachineFactoryMachine(() -> MoreMachineTileEntityTypes.REPLICATOR, MoreMachineLang.DESCRIPTION_REPLICATOR, MoreMachineFactoryType.REPLICATING)
             .withGui(() -> MoreMachineContainerTypes.REPLICATOR)
-            .withEnergyConfig(MoreMachineConfig.usage.itemReplicator, MoreMachineConfig.storage.itemReplicator)
+            .withEnergyConfig(() -> mekanism.api.math.MathUtils.clampToInt(MoreMachineConfig.usage.itemReplicator.get()), MoreMachineConfig.storage.itemReplicator::get)
             .with(ExtraAttributeUpgradeSupport.EXTRA_MACHINE_UPGRADES)
             .withSound(MekanismSounds.PURIFICATION_CHAMBER)
             .build();

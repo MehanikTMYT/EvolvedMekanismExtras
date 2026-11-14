@@ -5,8 +5,7 @@
     "minVersion": "0.5.0"
   },
   "package": "io.github.masyumero.emextras.mixin",
-  "compatibilityLevel": "JAVA_17",
-  "refmap": "emextras.refmap.json",
+  "compatibilityLevel": "JAVA_21",
   "mixins": [
     "MixinAdvancedFactory",
     "MixinExtraFactory",
@@ -15,8 +14,6 @@
     "MixinItemBlockExtraFactory",
     "MixinMoreMachineFactory",
     "MixinTileEntityExtraFactory",
-    "client.MixinMekanismEmi",
-    "client.MixinMoreMachineEMI",
     "invoker.InvokerExtraFactory",
     "invoker.InvokerExtraFactoryBuilder"
   ],

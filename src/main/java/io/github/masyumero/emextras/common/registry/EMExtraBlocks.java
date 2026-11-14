@@ -1,5 +1,6 @@
 package io.github.masyumero.emextras.common.registry;
 
+// port-26.1.2: migrate removed annotations and Mekanism/MC resource APIs.
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import com.jerry.mekextras.api.tier.IAdvancedTier;
@@ -22,9 +23,9 @@ import io.github.masyumero.emextras.common.item.block.machine.ItemBlockEMExtraFa
 import io.github.masyumero.emextras.common.tier.EMExtraFactoryTier;
 import io.github.masyumero.emextras.common.tile.factory.TileEntityEMExtraFactory;
 import io.github.masyumero.emextras.common.util.EMExtraEnumUtils;
-import mekanism.common.attachments.containers.ContainerType;
-import mekanism.common.attachments.containers.chemical.ChemicalTanksBuilder;
-import mekanism.common.attachments.containers.item.ItemSlotsBuilder;
+import mekanism.common.component.containers.type.ContainerType;
+import mekanism.common.component.containers.chemical.ChemicalTanksBuilder;
+import mekanism.common.component.containers.item.ItemSlotsBuilder;
 import mekanism.common.content.blocktype.FactoryType;
 import mekanism.common.recipe.MekanismRecipeType;
 import mekanism.common.recipe.lookup.cache.InputRecipeCache;
@@ -63,21 +64,21 @@ public class EMExtraBlocks {
     }
 
     private static <BLOCK extends Block, ITEM extends BlockItem> BlockRegistryObject<BLOCK, ITEM> registerTieredBlock(IAdvancedTier tier, String suffix,
-                                                                                                                      Supplier<? extends BLOCK> blockSupplier, BiFunction<BLOCK, Item.Properties, ITEM> itemCreator) {
+                                                                                                                      java.util.function.Function<net.minecraft.world.level.block.state.BlockBehaviour.Properties, ? extends BLOCK> blockSupplier, BiFunction<BLOCK, Item.Properties, ITEM> itemCreator) {
         return BLOCK.register(tier.getAdvanceTier().getLowerName() + suffix, blockSupplier, itemCreator);
     }
 
     private static <BLOCK extends Block, ITEM extends BlockItem> BlockRegistryObject<BLOCK, ITEM> registerTieredBlock(IEMExtraTier tier, String suffix,
-                                                                                                                      Supplier<? extends BLOCK> blockSupplier, BiFunction<BLOCK, Item.Properties, ITEM> itemCreator) {
+                                                                                                                      java.util.function.Function<net.minecraft.world.level.block.state.BlockBehaviour.Properties, ? extends BLOCK> blockSupplier, BiFunction<BLOCK, Item.Properties, ITEM> itemCreator) {
         return BLOCK.register(tier.getEMExtraTier().getLowerName() + suffix, blockSupplier, itemCreator);
     }
 
     private static <TILE extends TileEntityExtraFactory<?>> BlockRegistryObject<BlockExtraFactoryMachine.BlockExtraFactory<?>, ItemBlockExtraFactory> registerExtraFactory(ExtraFactory<TILE> type) {
         ExtraFactoryTier tier = (ExtraFactoryTier) type.get(ExtraAttributeTier.class).tier();
-        BlockRegistryObject<BlockExtraFactoryMachine.BlockExtraFactory<?>, ItemBlockExtraFactory> factory = registerTieredBlock(tier, "_" + type.getFactoryType().getRegistryNameComponent() + "_factory", () -> new BlockExtraFactoryMachine.BlockExtraFactory<>(type), ItemBlockExtraFactory::new);
+        BlockRegistryObject<BlockExtraFactoryMachine.BlockExtraFactory<?>, ItemBlockExtraFactory> factory = registerTieredBlock(tier, "_" + type.getFactoryType().getRegistryNameComponent() + "_factory", properties -> new BlockExtraFactoryMachine.BlockExtraFactory<>(type, properties), ItemBlockExtraFactory::new);
         factory.forItemHolder(holder -> {
             int processes = tier.processes;
-            Predicate<ItemStack> recipeInputPredicate = type.getFactoryType().equals(EMFactoryType.ALLOYING) ?
+            Predicate<net.neoforged.neoforge.transfer.item.ItemResource> recipeInputPredicate = type.getFactoryType().equals(EMFactoryType.ALLOYING) ?
                     s -> EMRecipeType.ALLOYING.getInputCache().containsInputA(null, s) :
                     switch (type.getFactoryType()) {
                 case SMELTING -> s -> MekanismRecipeType.SMELTING.getInputCache().containsInput(null, s);
@@ -128,7 +129,7 @@ public class EMExtraBlocks {
                                     .build())
                             .addAttachmentOnlyContainers(ContainerType.ITEM, () -> ItemSlotsBuilder.builder()
                                     .addBasicFactorySlots(processes, recipeInputPredicate)
-                                    .addInfusionFillOrConvertSlot(0)
+                                    .addChemicalFillOrConvertSlot(0)
                                     .addEnergy()
                                     .build());
                     case SAWING -> holder.addAttachmentOnlyContainers(ContainerType.ITEM, () -> ItemSlotsBuilder.builder()
@@ -143,10 +144,10 @@ public class EMExtraBlocks {
 
     private static <TILE extends TileEntityEMExtraFactory<?>> BlockRegistryObject<BlockEMExtraFactoryMachine.BlockEMExtraFactory<?>, ItemBlockEMExtraFactory> registerEMExtraFactory(EMExtraFactory<TILE> type) {
         EMExtraFactoryTier tier = (EMExtraFactoryTier) type.get(EMExtraAttributeTier.class).tier();
-        BlockRegistryObject<BlockEMExtraFactoryMachine.BlockEMExtraFactory<?>, ItemBlockEMExtraFactory> factory = registerTieredBlock(tier, "_" + type.getFactoryType().getRegistryNameComponent() + "_factory", () -> new BlockEMExtraFactoryMachine.BlockEMExtraFactory<>(type), ItemBlockEMExtraFactory::new);
+        BlockRegistryObject<BlockEMExtraFactoryMachine.BlockEMExtraFactory<?>, ItemBlockEMExtraFactory> factory = registerTieredBlock(tier, "_" + type.getFactoryType().getRegistryNameComponent() + "_factory", properties -> new BlockEMExtraFactoryMachine.BlockEMExtraFactory<>(type, properties), ItemBlockEMExtraFactory::new);
         factory.forItemHolder(holder -> {
             int processes = tier.processes;
-            Predicate<ItemStack> recipeInputPredicate = type.getFactoryType() == EMFactoryType.ALLOYING ?
+            Predicate<net.neoforged.neoforge.transfer.item.ItemResource> recipeInputPredicate = type.getFactoryType() == EMFactoryType.ALLOYING ?
                     s -> EMRecipeType.ALLOYING.getInputCache().containsInputA(null, s) :
                     switch (type.getFactoryType()) {
                 case SMELTING -> s -> MekanismRecipeType.SMELTING.getInputCache().containsInput(null, s);
@@ -200,7 +201,7 @@ public class EMExtraBlocks {
                                     .build())
                             .addAttachmentOnlyContainers(ContainerType.ITEM, () -> ItemSlotsBuilder.builder()
                                     .addBasicFactorySlots(processes, recipeInputPredicate)
-                                    .addInfusionFillOrConvertSlot(0)
+                                    .addChemicalFillOrConvertSlot(0)
                                     .addEnergy()
                                     .build());
                     case SAWING ->

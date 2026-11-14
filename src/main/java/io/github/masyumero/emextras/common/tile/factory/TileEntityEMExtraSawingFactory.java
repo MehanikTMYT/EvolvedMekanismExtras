@@ -1,5 +1,10 @@
 package io.github.masyumero.emextras.common.tile.factory;
 
+import net.neoforged.neoforge.transfer.transaction.TransactionContext;
+import net.neoforged.neoforge.transfer.item.ItemResource;
+import net.minecraft.world.item.ItemStackTemplate;
+import net.minecraft.world.item.Item;
+// port-26.1.2: migrate removed annotations and Mekanism/MC resource APIs.
 import com.jerry.mekextras.api.recipes.outputs.ExtraOutputHelper;
 import io.github.masyumero.emextras.common.inventory.slot.EMExtraFactoryInputInventorySlot;
 import io.github.masyumero.emextras.common.inventory.slot.EMExtraFactoryOutputInventorySlot;
@@ -17,7 +22,8 @@ import mekanism.api.recipes.outputs.IOutputHandler;
 import mekanism.client.recipe_viewer.type.IRecipeViewerRecipeType;
 import mekanism.client.recipe_viewer.type.RecipeViewerRecipeType;
 import mekanism.common.Mekanism;
-import mekanism.common.capabilities.holder.slot.InventorySlotHelper;
+import mekanism.common.capabilities.holder.container.MekContainerHelper;
+import mekanism.api.inventory.IInventorySlot;
 import mekanism.common.integration.computer.ComputerException;
 import mekanism.common.integration.computer.annotation.ComputerMethod;
 import mekanism.common.inventory.warning.WarningTracker.WarningType;
@@ -48,19 +54,21 @@ import java.util.Set;
 
 public class TileEntityEMExtraSawingFactory extends TileEntityEMExtraFactory<SawmillRecipe> implements ItemRecipeLookupHandler<SawmillRecipe> {
 
-    private static final CheckRecipeType<ItemStack, SawmillRecipe, ItemStack, ItemStack> OUTPUT_CHECK = (recipe, input, output, extra) -> {
+    // port-26.1.2: compare resource identities against recipe output templates.
+    private static final CheckRecipeType<Item, ItemResource, SawmillRecipe, ItemResource, ItemResource> OUTPUT_CHECK = (recipe, input, outputContents, secondaryOutputContents) -> {
         ChanceOutput chanceOutput = recipe.getOutput(input);
-        if (InventoryUtils.areItemsStackable(chanceOutput.getMainOutput(), output)) {
-            // If the input is good and the primary output matches, make sure that the secondary
+        if (outputContents.isEmpty() || outputContents.matches(chanceOutput.getMainOutput())) {
+            //If the input is good and the primary output matches, make sure that the secondary
             // output of this recipe will stack with what is currently in the secondary slot
-            if (extra.isEmpty()) {
+            if (secondaryOutputContents.isEmpty()) {
                 return true;
             }
-            ItemStack secondaryOutput = chanceOutput.getMaxSecondaryOutput();
-            return secondaryOutput.isEmpty() || ItemStack.isSameItemSameComponents(secondaryOutput, extra);
+            ItemStackTemplate secondaryOutput = chanceOutput.getMaxSecondaryOutput();
+            return secondaryOutput == null || secondaryOutputContents.matches(secondaryOutput);
         }
         return false;
     };
+
     private static final List<RecipeError> TRACKED_ERROR_TYPES = List.of(
             RecipeError.NOT_ENOUGH_ENERGY,
             RecipeError.NOT_ENOUGH_INPUT,
@@ -69,7 +77,7 @@ public class TileEntityEMExtraSawingFactory extends TileEntityEMExtraFactory<Saw
             RecipeError.INPUT_DOESNT_PRODUCE_OUTPUT);
     private static final Set<RecipeError> GLOBAL_ERROR_TYPES = Set.of(RecipeError.NOT_ENOUGH_ENERGY);
 
-    protected IInputHandler<@NotNull ItemStack>[] inputHandlers;
+    protected IInputHandler<net.minecraft.world.item.Item, @NotNull ItemStack>[] inputHandlers;
     protected IOutputHandler<@NotNull ChanceOutput>[] outputHandlers;
 
     public TileEntityEMExtraSawingFactory(Holder<Block> blockProvider, BlockPos pos, BlockState state) {
@@ -77,7 +85,7 @@ public class TileEntityEMExtraSawingFactory extends TileEntityEMExtraFactory<Saw
     }
 
     @Override
-    protected void addSlots(InventorySlotHelper builder, IContentsListener listener, IContentsListener updateSortingListener) {
+    protected void addSlots(MekContainerHelper<IInventorySlot> builder, IContentsListener listener, IContentsListener updateSortingListener) {
         inputHandlers = new IInputHandler[tier.processes];
         outputHandlers = new IOutputHandler[tier.processes];
         processInfoSlots = new ProcessInfo[tier.processes];
@@ -96,9 +104,9 @@ public class TileEntityEMExtraSawingFactory extends TileEntityEMExtraFactory<Saw
             // listener directly
             EMExtraFactoryInputInventorySlot inputSlot = EMExtraFactoryInputInventorySlot.create(this, i, outputSlot, secondaryOutputSlot, lookupMonitor, xPos, 13);
             int index = i;
-            builder.addSlot(inputSlot).tracksWarnings(slot -> slot.warning(WarningType.NO_MATCHING_RECIPE, getWarningCheck(RecipeError.NOT_ENOUGH_INPUT, index)));
-            builder.addSlot(outputSlot).tracksWarnings(slot -> slot.warning(WarningType.NO_SPACE_IN_OUTPUT, getWarningCheck(RecipeError.NOT_ENOUGH_OUTPUT_SPACE, index)));
-            builder.addSlot(secondaryOutputSlot).tracksWarnings(slot -> slot.warning(WarningType.NO_SPACE_IN_OUTPUT,
+            builder.addContainer(inputSlot).tracksWarnings(slot -> slot.warning(WarningType.NO_MATCHING_RECIPE, getWarningCheck(RecipeError.NOT_ENOUGH_INPUT, index)));
+            builder.addContainer(outputSlot).tracksWarnings(slot -> slot.warning(WarningType.NO_SPACE_IN_OUTPUT, getWarningCheck(RecipeError.NOT_ENOUGH_OUTPUT_SPACE, index)));
+            builder.addContainer(secondaryOutputSlot).tracksWarnings(slot -> slot.warning(WarningType.NO_SPACE_IN_OUTPUT,
                     getWarningCheck(TileEntityPrecisionSawmill.NOT_ENOUGH_SPACE_SECONDARY_OUTPUT_ERROR, index)));
             inputHandlers[i] = InputHelper.getInputHandler(inputSlot, RecipeError.NOT_ENOUGH_INPUT);
             outputHandlers[i] = ExtraOutputHelper.getOutputHandler(outputSlot, RecipeError.NOT_ENOUGH_OUTPUT_SPACE, secondaryOutputSlot,
@@ -108,30 +116,30 @@ public class TileEntityEMExtraSawingFactory extends TileEntityEMExtraFactory<Saw
     }
 
     @Override
-    public boolean isItemValidForSlot(@NotNull ItemStack stack) {
+    public boolean isItemValidForSlot(@NotNull net.neoforged.neoforge.transfer.item.ItemResource stack) {
         // contains recipe in general already validated by isValidInputItem
         return true;
     }
 
     @Override
-    public boolean isValidInputItem(@NotNull ItemStack stack) {
+    public boolean isValidInputItem(@NotNull net.neoforged.neoforge.transfer.item.ItemResource stack) {
         return containsRecipe(stack);
     }
 
     @Override
-    protected int getNeededInput(SawmillRecipe recipe, ItemStack inputStack) {
+    protected int getNeededInput(SawmillRecipe recipe, net.neoforged.neoforge.transfer.item.ItemResource inputStack) {
         return MathUtils.clampToInt(recipe.getInput().getNeededAmount(inputStack));
     }
 
     @Override
-    protected boolean isCachedRecipeValid(@Nullable CachedRecipe<SawmillRecipe> cached, @NotNull ItemStack stack) {
+    protected boolean isCachedRecipeValid(@Nullable CachedRecipe<SawmillRecipe> cached, @NotNull net.neoforged.neoforge.transfer.item.ItemResource stack) {
         return cached != null && cached.getRecipe().getInput().testType(stack);
     }
 
     @Override
-    protected SawmillRecipe findRecipe(int process, @NotNull ItemStack fallbackInput, @NotNull IInventorySlot outputSlot, @Nullable IInventorySlot secondaryOutputSlot) {
-        ItemStack extra = secondaryOutputSlot == null ? ItemStack.EMPTY : secondaryOutputSlot.getStack();
-        return getRecipeType().getInputCache().findTypeBasedRecipe(level, fallbackInput, outputSlot.getStack(), extra, OUTPUT_CHECK);
+    protected SawmillRecipe findRecipe(int process, @NotNull net.neoforged.neoforge.transfer.item.ItemResource fallbackInput, @NotNull IInventorySlot outputSlot, @Nullable IInventorySlot secondaryOutputSlot) {
+        net.neoforged.neoforge.transfer.item.ItemResource extra = secondaryOutputSlot == null ? net.neoforged.neoforge.transfer.item.ItemResource.EMPTY : secondaryOutputSlot.resource();
+        return getRecipeType().getInputCache().findTypeBasedRecipe(level, fallbackInput, outputSlot.resource(), extra, OUTPUT_CHECK);
     }
 
     @NotNull
@@ -154,7 +162,7 @@ public class TileEntityEMExtraSawingFactory extends TileEntityEMExtraFactory<Saw
     @NotNull
     @Override
     public CachedRecipe<SawmillRecipe> createNewCachedRecipe(@NotNull SawmillRecipe recipe, int cacheIndex) {
-        return OneInputCachedRecipe.sawing(recipe, recheckAllRecipeErrors[cacheIndex], inputHandlers[cacheIndex], outputHandlers[cacheIndex])
+        return new OneInputCachedRecipe<>(recipe, recheckAllRecipeErrors[cacheIndex], inputHandlers[cacheIndex], outputHandlers[cacheIndex])
                 .setErrorsChanged(errors -> errorTracker.onErrorsChanged(errors, cacheIndex))
                 .setCanHolderFunction(this::canFunction)
                 .setActive(active -> setActiveState(active, cacheIndex))
@@ -166,10 +174,11 @@ public class TileEntityEMExtraSawingFactory extends TileEntityEMExtraFactory<Saw
     }
 
     @Override
-    public void parseUpgradeData(HolderLookup.Provider provider, @NotNull IUpgradeData upgradeData) {
+// port-26.1.2: persistence and transaction signatures from ported factory.
+    public void parseUpgradeData(IUpgradeData upgradeData, HolderLookup.Provider provider, TransactionContext transaction) {
         if (upgradeData instanceof SawmillUpgradeData) {
-            // Validate we have the correct type of data before passing it upwards
-            super.parseUpgradeData(provider, upgradeData);
+            //Validate we have the correct type of data before passing it upwards
+            super.parseUpgradeData(upgradeData, provider, transaction);
         } else {
             Mekanism.logger.warn("Unhandled upgrade data.", new Throwable());
         }
@@ -178,7 +187,7 @@ public class TileEntityEMExtraSawingFactory extends TileEntityEMExtraFactory<Saw
     @NotNull
     @Override
     public SawmillUpgradeData getUpgradeData(HolderLookup.Provider provider) {
-        return new SawmillUpgradeData(provider, redstone, getControlType(), getEnergyContainer(), progress, energySlot, inputSlots, outputSlots, isSorting(), getComponents());
+        return new SawmillUpgradeData(provider, redstone, getControlType(), getEnergyContainer(), progress, energySlot, inputSlots, outputSlots, isSorting(), getComponents(), problemPath());
     }
 
     // Methods relating to IComputerTile
@@ -187,7 +196,7 @@ public class TileEntityEMExtraSawingFactory extends TileEntityEMExtraFactory<Saw
         validateValidProcess(process);
         IInventorySlot secondaryOutputSlot = processInfoSlots[process].secondaryOutputSlot();
         // This should never be null, but in case it is, handle it
-        return secondaryOutputSlot == null ? ItemStack.EMPTY : secondaryOutputSlot.getStack();
+        return secondaryOutputSlot == null ? ItemStack.EMPTY : secondaryOutputSlot.resource().toStack(secondaryOutputSlot.amountAsInt());
     }
     // End methods IComputerTile
 }

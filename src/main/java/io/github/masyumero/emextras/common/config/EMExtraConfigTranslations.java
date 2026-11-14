@@ -1,10 +1,11 @@
 package io.github.masyumero.emextras.common.config;
 
+// port-26.1.2: adapt MC 26 and Mekanism 10.8 signatures while preserving behavior.
 import io.github.masyumero.emextras.EMExtras;
 import lombok.Getter;
 import mekanism.common.config.IConfigTranslation;
 import mekanism.common.config.TranslationPreset;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import org.jetbrains.annotations.Nullable;
 
 public enum EMExtraConfigTranslations implements IConfigTranslation {

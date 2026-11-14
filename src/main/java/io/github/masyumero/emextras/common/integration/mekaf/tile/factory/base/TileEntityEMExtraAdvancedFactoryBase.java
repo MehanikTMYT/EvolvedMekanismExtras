@@ -1,5 +1,16 @@
 package io.github.masyumero.emextras.common.integration.mekaf.tile.factory.base;
 
+import java.util.Optional;
+import net.minecraft.core.component.DataComponentGetter;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
+// port-26.1.2: typed container holders and server-level update context.
+import mekanism.api.energy.IEnergyContainer;
+import mekanism.common.capabilities.holder.single.SingleConfigHolder;
+import mekanism.common.capabilities.holder.single.ISingleContainerHolder;
+import mekanism.api.fluid.IFluidTank;
+import mekanism.common.capabilities.holder.container.IContainerHolder;
+// port-26.1.2: migrate removed annotations and Mekanism/MC resource APIs.
 import com.jerry.mekaf.common.block.attribute.AttributeAdvancedFactoryType;
 import com.jerry.mekaf.common.content.blocktype.AdvancedFactoryType;
 import com.jerry.mekaf.common.tile.IFactoryStyle;
@@ -26,12 +37,8 @@ import mekanism.api.recipes.inputs.IInputHandler;
 import mekanism.api.recipes.outputs.IOutputHandler;
 import mekanism.common.CommonWorldTickHandler;
 import mekanism.common.block.attribute.Attribute;
-import mekanism.common.capabilities.holder.chemical.ChemicalTankHelper;
-import mekanism.common.capabilities.holder.chemical.IChemicalTankHolder;
-import mekanism.common.capabilities.holder.energy.EnergyContainerHelper;
-import mekanism.common.capabilities.holder.energy.IEnergyContainerHolder;
-import mekanism.common.capabilities.holder.slot.IInventorySlotHolder;
-import mekanism.common.capabilities.holder.slot.InventorySlotHelper;
+import mekanism.common.capabilities.holder.container.MekContainerHelper;
+import mekanism.api.inventory.IInventorySlot;
 import mekanism.common.integration.computer.ComputerException;
 import mekanism.common.integration.computer.SpecialComputerMethodWrapper.ComputerIInventorySlotWrapper;
 import mekanism.common.integration.computer.annotation.ComputerMethod;
@@ -117,17 +124,19 @@ public abstract class TileEntityEMExtraAdvancedFactoryBase<RECIPE extends Mekani
     protected final AdvancedFactoryType type;
 
     // 为了加压工厂而更改
-    @Getter
+    @Getter(lombok.AccessLevel.NONE)
     protected EMExtraAdvancedFactoryEnergyContainer energyContainer;
+
+    public EMExtraAdvancedFactoryEnergyContainer getEnergyContainerTyped() { return energyContainer; } // port-26.1.2: typed energy GUI access
 
     @WrappingComputerMethod(wrapper = ComputerIInventorySlotWrapper.class, methodNames = "getEnergyItem", docPlaceholder = "energy slot")
     protected EnergyInventorySlot energySlot;
-    protected IInputHandler<@NotNull ChemicalStack>[] chemicalInputHandlers;
-    protected IOutputHandler<@NotNull ChemicalStack>[] chemicalOutputHandlers;
-    protected IInputHandler<@NotNull ItemStack>[] itemInputHandlers;
-    protected IOutputHandler<@NotNull ItemStack>[] itemOutputHandlers;
-    protected IInputHandler<@NotNull FluidStack>[] fluidInputHandlers;
-    protected IOutputHandler<@NotNull FluidStack>[] fluidOutputHandlers;
+    protected IInputHandler<mekanism.api.chemical.Chemical, @NotNull ChemicalStack>[] chemicalInputHandlers;
+    protected IOutputHandler<mekanism.api.chemical.ChemicalStackTemplate>[] chemicalOutputHandlers;
+    protected IInputHandler<net.minecraft.world.item.Item, @NotNull ItemStack>[] itemInputHandlers;
+    protected IOutputHandler<net.minecraft.world.item.ItemStackTemplate>[] itemOutputHandlers;
+    protected IInputHandler<net.minecraft.world.level.material.Fluid, @NotNull FluidStack>[] fluidInputHandlers;
+    protected IOutputHandler<net.neoforged.neoforge.fluids.FluidStackTemplate>[] fluidOutputHandlers;
 
     protected TileEntityEMExtraAdvancedFactoryBase(Holder<Block> blockProvider, BlockPos pos, BlockState state, List<RecipeError> errorTypes, Set<RecipeError> globalErrorTypes) {
         super(blockProvider, pos, state);
@@ -173,8 +182,8 @@ public abstract class TileEntityEMExtraAdvancedFactoryBase<RECIPE extends Mekani
     }
 
     @Override
-    public @Nullable IChemicalTankHolder getInitialChemicalTanks(IContentsListener listener) {
-        ChemicalTankHelper builder = ChemicalTankHelper.forSideWithConfig(this);
+    public @Nullable IContainerHolder<IChemicalTank> getInitialChemicalTanks(IContentsListener listener) {
+        MekContainerHelper<IChemicalTank> builder = MekContainerHelper.forSideWithChemicalConfig(this);
         addTanks(builder, listener, () -> {
             listener.onContentsChanged();
             // Mark sorting as being needed again
@@ -185,21 +194,20 @@ public abstract class TileEntityEMExtraAdvancedFactoryBase<RECIPE extends Mekani
 
     @NotNull
     @Override
-    protected IEnergyContainerHolder getInitialEnergyContainers(IContentsListener listener) {
-        EnergyContainerHelper builder = EnergyContainerHelper.forSideWithConfig(this);
-        builder.addContainer(energyContainer = EMExtraAdvancedFactoryEnergyContainer.input(this, () -> {
+    protected ISingleContainerHolder<IEnergyContainer> getInitialEnergyContainer(IContentsListener listener) {
+        energyContainer = EMExtraAdvancedFactoryEnergyContainer.input(this, () -> {
             listener.onContentsChanged();
             for (FactoryRecipeCacheLookupMonitor<RECIPE> cacheLookupMonitor : recipeCacheLookupMonitors) {
                 cacheLookupMonitor.unpause();
             }
-        }));
-        return builder.build();
+        });
+        return SingleConfigHolder.energy(energyContainer, this);
     }
 
     @NotNull
     @Override
-    protected IInventorySlotHolder getInitialInventory(IContentsListener listener) {
-        InventorySlotHelper builder = InventorySlotHelper.forSideWithConfig(this);
+    protected IContainerHolder<IInventorySlot> getInitialInventory(IContentsListener listener) {
+        MekContainerHelper<IInventorySlot> builder = MekContainerHelper.forSideWithItemConfig(this);
         addSlots(builder, listener, () -> {
             listener.onContentsChanged();
             // Mark sorting as being needed again
@@ -208,13 +216,13 @@ public abstract class TileEntityEMExtraAdvancedFactoryBase<RECIPE extends Mekani
         // Add the energy slot after adding the other slots so that it has the lowest priority in shift clicking
         // Note: We can just pass ourselves as the listener instead of the listener that updates sorting as well,
         // as changes to it won't change anything about the sorting of the recipe
-        builder.addSlot(energySlot = EnergyInventorySlot.fillOrConvert(energyContainer, this::getLevel, listener, 7, 13));
+        builder.addContainer(energySlot = EnergyInventorySlot.fillOrConvert(energyContainer, this::getLevel, listener, 7, 13));
         return builder.build();
     }
 
-    protected abstract void addTanks(ChemicalTankHelper builder, IContentsListener listener, IContentsListener updateSortingListener);
+    protected abstract void addTanks(MekContainerHelper<IChemicalTank> builder, IContentsListener listener, IContentsListener updateSortingListener);
 
-    protected abstract void addSlots(InventorySlotHelper builder, IContentsListener listener, IContentsListener updateSortingListener);
+    protected abstract void addSlots(MekContainerHelper<IInventorySlot> builder, IContentsListener listener, IContentsListener updateSortingListener);
 
     public int getXPos(int index) {
         return BASE_X + (index * BASE_X_MULT);
@@ -245,9 +253,9 @@ public abstract class TileEntityEMExtraAdvancedFactoryBase<RECIPE extends Mekani
     }
 
     @Override
-    protected boolean onUpdateServer() {
-        boolean sendUpdatePacket = super.onUpdateServer();
-        energySlot.fillContainerOrConvert();
+    protected boolean onUpdateServer(net.minecraft.server.level.ServerLevel level) {
+        boolean sendUpdatePacket = super.onUpdateServer(level);
+        energySlot.fillContainerOrConvert(null);
 
         handleSecondaryFuel();
         if (sortingNeeded && isSorting()) {
@@ -272,7 +280,7 @@ public abstract class TileEntityEMExtraAdvancedFactoryBase<RECIPE extends Mekani
         // Copy this so that if it changes we still have the original amount. Don't bother making it a constant though
         // as this way
         // we can then use minusEqual instead of subtract to remove an extra copy call
-        long prev = energyContainer.getEnergy();
+        long prev = energyContainer.getAmountAsLong();
         for (int i = 0; i < recipeCacheLookupMonitors.length; i++) {
             if (!recipeCacheLookupMonitors[i].updateAndProcess()) {
                 // If we don't have a recipe in that slot make sure that our active state for that position is false
@@ -290,7 +298,7 @@ public abstract class TileEntityEMExtraAdvancedFactoryBase<RECIPE extends Mekani
         }
         setActive(isActive);
         // If none of the recipes are actively processing don't bother with any subtraction
-        lastUsage = isActive ? prev - energyContainer.getEnergy() : 0L;
+        lastUsage = isActive ? prev - energyContainer.getAmountAsLong() : 0L;
         return sendUpdatePacket;
     }
 
@@ -348,7 +356,7 @@ public abstract class TileEntityEMExtraAdvancedFactoryBase<RECIPE extends Mekani
 
     @ComputerMethod(methodDescription = "Total number of ticks it takes currently for the recipe to complete")
     public int getTicksRequired() {
-        return upgradeComponent.isUpgradeInstalled(ExtraUpgrade.CREATIVE) ? 0 : ticksRequired;
+        return getComponent().getUpgrades(ExtraUpgrade.CREATIVE) > 0 ? 0 : ticksRequired;
     }
 
     public int getOperationsPerTick() {
@@ -368,10 +376,11 @@ public abstract class TileEntityEMExtraAdvancedFactoryBase<RECIPE extends Mekani
     }
 
     @Override
-    public void loadAdditional(@NotNull CompoundTag nbt, @NotNull HolderLookup.Provider provider) {
-        super.loadAdditional(nbt, provider);
-        if (nbt.contains(SerializationConstants.PROGRESS, Tag.TAG_INT_ARRAY)) {
-            int[] savedProgress = nbt.getIntArray(SerializationConstants.PROGRESS);
+    public void loadAdditional(@NotNull ValueInput input) {
+        super.loadAdditional(input);
+        Optional<int[]> optionalProgress = input.getIntArray(SerializationConstants.PROGRESS);
+        if (optionalProgress.isPresent()) {
+            int[] savedProgress = optionalProgress.get();
             if (tier.processes != savedProgress.length) {
                 Arrays.fill(progress, 0);
             }
@@ -382,21 +391,21 @@ public abstract class TileEntityEMExtraAdvancedFactoryBase<RECIPE extends Mekani
     }
 
     @Override
-    public void saveAdditional(@NotNull CompoundTag nbtTags, @NotNull HolderLookup.Provider provider) {
-        super.saveAdditional(nbtTags, provider);
-        nbtTags.putIntArray(SerializationConstants.PROGRESS, Arrays.copyOf(progress, progress.length));
+    public void saveAdditional(@NotNull ValueOutput output) {
+        super.saveAdditional(output);
+        output.putIntArray(SerializationConstants.PROGRESS, Arrays.copyOf(progress, progress.length));
     }
 
     @Override
-    public void writeSustainedData(HolderLookup.Provider provider, CompoundTag data) {
-        super.writeSustainedData(provider, data);
-        data.putBoolean(SerializationConstants.SORTING, isSorting());
+    public void writeSustainedData(@NotNull ValueOutput output) {
+        super.writeSustainedData(output);
+        output.putBoolean(SerializationConstants.SORTING, isSorting());
     }
 
     @Override
-    public void readSustainedData(HolderLookup.Provider provider, @NotNull CompoundTag data) {
-        super.readSustainedData(provider, data);
-        NBTUtils.setBooleanIfPresent(data, SerializationConstants.SORTING, value -> sorting = value);
+    public void readSustainedData(@NotNull ValueInput input) {
+        super.readSustainedData(input);
+        sorting = input.getBooleanOr(SerializationConstants.SORTING, sorting);
     }
 
     @Override
@@ -406,7 +415,7 @@ public abstract class TileEntityEMExtraAdvancedFactoryBase<RECIPE extends Mekani
     }
 
     @Override
-    protected void applyImplicitComponents(@NotNull BlockEntity.DataComponentInput input) {
+    protected void applyImplicitComponents(@NotNull DataComponentGetter input) {
         super.applyImplicitComponents(input);
         sorting = input.getOrDefault(MekanismDataComponents.SORTING, sorting);
     }
@@ -422,7 +431,7 @@ public abstract class TileEntityEMExtraAdvancedFactoryBase<RECIPE extends Mekani
             operationsPerTick = MekanismUtils.getOperationsPerTick(this, BASE_TICKS_REQUIRED, upgradeMaxOperations);
         } else if (upgrade == ExtraUpgrade.STACK) {
             // 实际上一直是整数所以强制转化为int也不会损失什么
-            upgradeMaxOperations = (int) Math.pow(2, upgradeComponent.getUpgrades(ExtraUpgrade.STACK));
+            upgradeMaxOperations = (int) Math.pow(2, getComponent().getUpgrades(ExtraUpgrade.STACK));
             operationsPerTick = MekanismUtils.getOperationsPerTick(this, BASE_TICKS_REQUIRED, upgradeMaxOperations);
         }
     }
@@ -452,6 +461,14 @@ public abstract class TileEntityEMExtraAdvancedFactoryBase<RECIPE extends Mekani
         container.track(SyncableLong.create(this::getLastUsage, value -> lastUsage = value));
         container.track(SyncableBoolean.create(this::isSorting, value -> sorting = value));
         container.track(SyncableInt.create(this::getTicksRequired, value -> ticksRequired = value));
+    }
+
+    // port-26.1.2: component data uses ValueInput with scoped diagnostics.
+    protected void readUpgradeComponents(HolderLookup.Provider provider, CompoundTag components) {
+        try (var reporter = new net.minecraft.util.ProblemReporter.ScopedCollector(problemPath(), mekanism.common.Mekanism.logger)) {
+            ValueInput input = net.minecraft.world.level.storage.TagValueInput.create(reporter, provider, components);
+            for (mekanism.common.tile.component.ITileComponent component : getComponents()) component.read(input);
+        }
     }
 
     // Methods relating to IComputerTile

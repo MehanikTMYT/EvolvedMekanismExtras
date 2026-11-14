@@ -1,48 +1,26 @@
 plugins {
+    id 'idea'
     id 'java-library'
     id 'maven-publish'
-    id 'idea'
-    alias libs.plugins.modDevGradle
-    alias libs.plugins.lombok
+    id 'net.neoforged.moddev' version '2.0.143' // port-26.1.2: флотская версия (ловушка14)
+    id 'io.freefair.lombok' version '9.5.0' // port-26.1.2: как в mekanism-stack (Java25)
 }
 
-tasks.named('wrapper', Wrapper).configure {
-    // Define wrapper values here so as to not have to always do so when updating gradlew.properties.
-    // Switching this to Wrapper.DistributionType.ALL will download the full gradle sources that comes with
-    // documentation attached on cursor hover of gradle classes and methods. However, this comes with increased
-    // file size for Gradle. If you do switch this to ALL, run the Gradle wrapper task twice afterwards.
-    // (Verify by checking gradle/wrapper/gradle-wrapper.properties to see if distributionUrl now points to `-all`)
-    distributionType = Wrapper.DistributionType.BIN
-}
-
-version = mod_version
 group = mod_group_id
-
-repositories {
-    mavenCentral()
-    maven {
-        url "https://dvs1.progwml6.com/files/maven"
-    }
-    maven {
-        url "https://cursemaven.com"
-    }
-    maven {
-        url 'https://modmaven.dev/'
-    }
-    exclusiveContent { // terraformers - EMI
-        forRepository { maven { url = "https://maven.terraformersmc.com/releases/" } }
-        filter { includeGroup("dev.emi") }
-    }
-}
+version = minecraft_version + "-" + mod_version
 
 base {
     archivesName = JarFileName
 }
 
-java {
-    toolchain.languageVersion = JavaLanguageVersion.of(21)
+java.toolchain.languageVersion = JavaLanguageVersion.of(25) // port-26.1.2: Java 25
+
+lombok {
+    version = "1.18.46" // port-26.1.2: как в Mekanism-MoreMachine (совместим с Java25)
 }
 
+// port-26.1.2: datagen-исходники живут в отдельном sourceSet src/data (не входит в compileJava).
+// Их НЕ трогаем: миграция data-API26 — отдельный этап (см. отчёт).
 sourceSets {
     data {
         compileClasspath += main.output + main.compileClasspath
@@ -51,152 +29,151 @@ sourceSets {
 }
 
 neoForge {
-    // Specify the version of NeoForge to use.
-    version = libs.versions.neoForge.get()
+    version = project.neo_version
 
-    parchment {
-        mappingsVersion = libs.versions.parchment.get()
-        minecraftVersion = libs.versions.minecraft.get()
-    }
+    // port-26.1.2: AT из исходного дерева
+    accessTransformers = project.files("src/main/resources/META-INF/accesstransformer.cfg")
 
-    // This line is optional. Access Transformers are automatically detected
-    accessTransformers {
-        var file = project.file('src/main/resources/META-INF/accesstransformer.cfg')
-        from(file)
-        publish(file)
-    }
-
-    // Default run configurations.
-    // These can be tweaked, removed, or duplicated as needed.
     runs {
         client {
             client()
-
-            // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
         server {
             server()
+            gameDirectory = project.file('run/server')
             programArgument '--nogui'
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
-        // This run config launches GameTestServer and runs all registered gametests, then exits.
-        // By default, the server will crash when no gametests are provided.
-        // The gametest system is also enabled by default for other run configs under the /test command.
         gameTestServer {
             type = "gameTestServer"
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
-        data {
-            data()
-
-            // example of overriding the workingDirectory set in configureEach above, uncomment if you want to use it
-            // gameDirectory = project.file('run-data')
-
-            // Specify the modid for data generation, where to output the resulting resource, and where to look for existing resources.
-            programArguments.addAll '--mod', project.mod_id,
-                    '--all',
+        // port-26.1.2: run-типа "data" в neoforge26 больше нет (ловушка66) — serverData/clientData
+        serverData {
+            serverData()
+            programArguments.addAll '--mod', project.mod_id, '--all',
                     '--output', file('src/generated/resources/').getAbsolutePath(),
                     '--existing', file('src/main/resources/').getAbsolutePath(),
                     '--existing-mod', 'mekanism',
-                    '--existing-mod', 'mekmm',
                     '--existing-mod', 'evolvedmekanism',
-                    '--existing-mod', 'mekanism_extras'
-
-            mods {
-                "${mod_id}" {
-                    sourceSet(sourceSets.data)
-                }
-            }
+                    '--existing-mod', 'mekanism_extras',
+                    '--existing-mod', 'mekmm'
         }
 
-        // applies to all the run configs above
-        configureEach {
-            // Recommended logging data for a userdev environment
-            // The markers can be added/remove as needed separated by commas.
-            // "SCAN": For mods scan.
-            // "REGISTRIES": For firing of registry events.
-            // "REGISTRYDUMP": For getting the contents of all registries.
-            systemProperty 'forge.logging.markers', 'REGISTRIES'
+        clientData {
+            clientData()
+            programArguments.addAll '--mod', project.mod_id, '--all',
+                    '--output', file('src/generated/resources/').getAbsolutePath(),
+                    '--existing', file('src/main/resources/').getAbsolutePath(),
+                    '--existing-mod', 'mekanism',
+                    '--existing-mod', 'evolvedmekanism',
+                    '--existing-mod', 'mekanism_extras',
+                    '--existing-mod', 'mekmm'
+        }
 
-            // Recommended logging level for the console
-            // You can set various levels here.
-            // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
+        configureEach {
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
             logLevel = org.slf4j.event.Level.DEBUG
         }
     }
 
     mods {
-        // define mod <-> source bindings
-        // these are used to tell the game which sources are for which mod
-        // multi mod projects should define one per mod
         "${mod_id}" {
             sourceSet(sourceSets.main)
         }
     }
 }
 
-jar {
-    manifest.attributes([
-            "MixinConfigs": "${mod_id}.mixins.json"
-    ])
-}
-
 // Include resources generated by data generators.
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
-configurations {
-    runtimeClasspath.extendsFrom localRuntime
+repositories {
+    mavenLocal() // port-26.1.2: наш Mekanism homebaked + EMI из .m2
+    mavenCentral()
 }
 
 dependencies {
+    // --- Портированные деревья-зависимости флота (jar'ы собраны из портированных исходников,
+    // лежат в /root/home/forks/work/evolved-mekanism-extras-26.1.2/dep-libs, ловушка70) ---
+    // Evolved Mekanism: worktrees/evolved-mekanism-26.1.2/build/classes
+    compileOnly files("../../work/evolved-mekanism-extras-26.1.2/dep-libs/evolvedmekanism-26.1.2.jar")
+    // Mekanism Extras (modId mekanism_extras): порт флота, реальный 26.1.2-джар
+    compileOnly files("../../work/evolved-mekanism-extras-26.1.2/dep-libs/mekanism_extras-26.1.2-1.4.2-fix7-atm11-0.9.0.jar")
+    // Mekanism MoreMachine (modId mekmm) + пакет com.jerry.mekaf — из одного дерева mekanism-stack/Mekanism-MoreMachine
+    compileOnly files("../../work/evolved-mekanism-extras-26.1.2/dep-libs/mekmm-2.0.0-26.1.2.jar")
+    // MTO (modId mekanismtieredoutlines) — только для миксина MixinMTOModClient
+    compileOnly files("../../work/evolved-mekanism-extras-26.1.2/dep-libs/mekanism-tiered-outlines-mto-0.1.0.jar")
 
-    compileOnly(libs.jetbrains.annotations)
+    compileOnly "org.jetbrains:annotations:${jetbrains_annotations_version}"
 
-    compileOnly(forge.bundles.jei)
-    compileOnly(forge.emi)
+    compileOnly "dev.emi:emi-neoforge:${emi_version}+${minecraft_version}:api"
+    // port-26.1.2: EMI-only политика флота — runtimeOnly включён
+    runtimeOnly "dev.emi:emi-neoforge:${emi_version}+${minecraft_version}"
 
-    implementation(forge.mekanism)
-    implementation(forge.evolvedMekanism)
-    runtimeOnly(forge.igreeLib)
-    implementation(forge.mekanismExtras)
-    implementation(forge.mekanismMoreMachine)
-    implementation(forge.mekanismTieredOutline)
-    //// If you want to test/use Mekanism & its modules during `runClient` invocation, use the following
-    runtimeOnly(variantOf(forge.mekanism) { classifier("additions")})
-    runtimeOnly(variantOf(forge.mekanism) { classifier("generators")})
-    runtimeOnly(variantOf(forge.mekanism) { classifier("tools")})
-    runtimeOnly(forge.jei.neoforge.impl)
-    runtimeOnly(forge.emi)
+    implementation "mekanism:Mekanism:${minecraft_version}-${mekanism_version}" // core
+    runtimeOnly "mekanism:Mekanism:${minecraft_version}-${mekanism_version}:additions"
+    runtimeOnly "mekanism:Mekanism:${minecraft_version}-${mekanism_version}:generators"
+    runtimeOnly "mekanism:Mekanism:${minecraft_version}-${mekanism_version}:tools"
+}
+
+// port-26.1.2: EMI-миксины НЕ компилируются — их целевых классов во флоте нет:
+//   - mekanism.client.recipe_viewer.emi.MekanismEmi не собирается в homebaked Mekanism (disableEMI);
+//   - com.jerry.mekmm.client.recipe_viewer.emi.MoreMachineEMI исключён из сборки mekmm.
+// TODO port-26.1.2: восстановить EMI-покрытие emextras после появления EMI-плагинов Mekanism/mekmm
+// (или написать собственный EMI-плагин emextras) и вернуть эти миксины в компиляцию и в emextras.mixins.json.
+sourceSets {
+    main {
+        java {
+            exclude 'io/github/masyumero/emextras/mixin/client/MixinMekanismEmi.java'
+            exclude 'io/github/masyumero/emextras/mixin/client/MixinMoreMachineEMI.java'
+        }
+    }
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.
 // A missing property will result in an error. Properties are expanded using ${} Groovy notation.
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
     var replaceProperties = [
-            minecraft_version      : libs.versions.minecraft.get(),
-            neo_version            : libs.versions.neoversion.get(),
-            mod_id                 : mod_id,
-            mod_name               : mod_name,
-            mod_license            : mod_license,
-            mod_version            : mod_version,
-            mod_authors            : mod_authors,
-            mod_description        : mod_description,
-            mekanism_version       : forge.versions.mekanism.get().split("\\-")[1]
+            minecraft_version         : minecraft_version,
+            minecraft_version_range   : minecraft_version_range,
+            neo_version               : neo_version,
+            neo_version_range         : neo_version_range,
+            loader_version_range      : loader_version_range,
+            mod_id                    : mod_id,
+            mod_name                  : mod_name,
+            mod_license               : mod_license,
+            mod_version               : mod_version,
+            mod_authors               : mod_authors,
+            mod_description           : mod_description,
+            mekanism_version_range    : mekanism_version_range,
+            evolvedmekanism_version_range  : evolvedmekanism_version_range,
+            mekanism_extras_version_range  : mekanism_extras_version_range,
+            mekmm_version_range       : mekmm_version_range,
+            mto_version_range         : mto_version_range,
     ]
     inputs.properties replaceProperties
     expand replaceProperties
     from "src/main/templates"
     into "build/generated/sources/modMetadata"
 }
-// Include the output of "generateModMetadata" as an input directory for the build
-// this works with both building through Gradle and the IDE.
 sourceSets.main.resources.srcDir generateModMetadata
-// To avoid having to run "generateModMetadata" manually, make it run on every project reload
 neoForge.ideSyncTask generateModMetadata
+
+// Include resources generated by data generators (см. также sourceSet выше).
+jar {
+    manifest.attributes([
+            "MixinConfigs": "${mod_id}.mixins.json"
+    ])
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+    options.compilerArgs += ['-Xmaxerrs', '1000'] // port-26.1.2: снять дефолтный лимит100 — иначе не виден полный остаток (ловушка69)
+}
 
 // Example configuration to allow publishing using the maven-publish plugin
 publishing {
@@ -205,18 +182,8 @@ publishing {
             from components.java
         }
     }
-    repositories {
-        maven {
-            url "file://${project.projectDir}/repo"
-        }
-    }
 }
 
-tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
-}
-
-// IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.
 idea {
     module {
         downloadSources = true

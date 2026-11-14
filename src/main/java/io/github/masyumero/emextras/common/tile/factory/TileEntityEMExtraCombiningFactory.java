@@ -1,5 +1,7 @@
 package io.github.masyumero.emextras.common.tile.factory;
 
+import net.neoforged.neoforge.transfer.transaction.TransactionContext;
+// port-26.1.2: migrate removed annotations and Mekanism/MC resource APIs.
 import io.github.masyumero.emextras.common.inventory.slot.EMExtraStackableInputInventorySlot;
 import mekanism.api.IContentsListener;
 import mekanism.api.inventory.IInventorySlot;
@@ -13,7 +15,8 @@ import mekanism.api.recipes.inputs.InputHelper;
 import mekanism.client.recipe_viewer.type.IRecipeViewerRecipeType;
 import mekanism.client.recipe_viewer.type.RecipeViewerRecipeType;
 import mekanism.common.Mekanism;
-import mekanism.common.capabilities.holder.slot.InventorySlotHelper;
+import mekanism.common.capabilities.holder.container.MekContainerHelper;
+import mekanism.api.inventory.IInventorySlot;
 import mekanism.common.integration.computer.SpecialComputerMethodWrapper.ComputerIInventorySlotWrapper;
 import mekanism.common.integration.computer.annotation.WrappingComputerMethod;
 import mekanism.common.inventory.container.slot.ContainerSlotType;
@@ -42,7 +45,7 @@ import java.util.Set;
 
 public class TileEntityEMExtraCombiningFactory extends TileEntityEMExtraItemToItemFactory<CombinerRecipe> implements DoubleItemRecipeLookupHandler<CombinerRecipe> {
 
-    private static final CheckRecipeType<ItemStack, ItemStack, CombinerRecipe, ItemStack> OUTPUT_CHECK = (recipe, input, extra, output) -> InventoryUtils.areItemsStackable(recipe.getOutput(input, extra), output);
+    private static final CheckRecipeType<net.minecraft.world.item.Item, net.neoforged.neoforge.transfer.item.ItemResource, net.minecraft.world.item.Item, net.neoforged.neoforge.transfer.item.ItemResource, CombinerRecipe, net.neoforged.neoforge.transfer.item.ItemResource> OUTPUT_CHECK = (recipe, input, extra, output) -> output.isEmpty() || output.matches(recipe.getOutput(input, extra));
     private static final List<RecipeError> TRACKED_ERROR_TYPES = List.of(
             RecipeError.NOT_ENOUGH_ENERGY,
             RecipeError.NOT_ENOUGH_INPUT,
@@ -53,7 +56,7 @@ public class TileEntityEMExtraCombiningFactory extends TileEntityEMExtraItemToIt
             RecipeError.NOT_ENOUGH_ENERGY,
             RecipeError.NOT_ENOUGH_SECONDARY_INPUT);
 
-    private final IInputHandler<@NotNull ItemStack> extraInputHandler;
+    private final IInputHandler<net.minecraft.world.item.Item, @NotNull ItemStack> extraInputHandler;
 
     @WrappingComputerMethod(wrapper = ComputerIInventorySlotWrapper.class, methodNames = "getSecondaryInput", docPlaceholder = "secondary input slot")
     EMExtraStackableInputInventorySlot extraSlot;
@@ -64,9 +67,9 @@ public class TileEntityEMExtraCombiningFactory extends TileEntityEMExtraItemToIt
     }
 
     @Override
-    protected void addSlots(InventorySlotHelper builder, IContentsListener listener, IContentsListener updateSortingListener) {
+    protected void addSlots(MekContainerHelper<IInventorySlot> builder, IContentsListener listener, IContentsListener updateSortingListener) {
         super.addSlots(builder, listener, updateSortingListener);
-        builder.addSlot(extraSlot = EMExtraStackableInputInventorySlot.at(tier, this::containsRecipeB, markAllMonitorsChanged(listener), 7, 57));
+        builder.addContainer(extraSlot = EMExtraStackableInputInventorySlot.at(tier, this::containsRecipeB, markAllMonitorsChanged(listener), 7, 57));
         extraSlot.setSlotType(ContainerSlotType.EXTRA);
     }
 
@@ -77,33 +80,33 @@ public class TileEntityEMExtraCombiningFactory extends TileEntityEMExtraItemToIt
     }
 
     @Override
-    public boolean isItemValidForSlot(@NotNull ItemStack stack) {
-        return containsRecipeAB(stack, extraSlot.getStack());
+    public boolean isItemValidForSlot(@NotNull net.neoforged.neoforge.transfer.item.ItemResource stack) {
+        return containsRecipeAB(stack, extraSlot.resource());
     }
 
     @Override
-    public boolean isValidInputItem(@NotNull ItemStack stack) {
+    public boolean isValidInputItem(@NotNull net.neoforged.neoforge.transfer.item.ItemResource stack) {
         return containsRecipeA(stack);
     }
 
     @Override
-    protected int getNeededInput(CombinerRecipe recipe, ItemStack inputStack) {
+    protected int getNeededInput(CombinerRecipe recipe, net.neoforged.neoforge.transfer.item.ItemResource inputStack) {
         return MathUtils.clampToInt(recipe.getMainInput().getNeededAmount(inputStack));
     }
 
     @Override
-    protected boolean isCachedRecipeValid(@Nullable CachedRecipe<CombinerRecipe> cached, @NotNull ItemStack stack) {
+    protected boolean isCachedRecipeValid(@Nullable CachedRecipe<CombinerRecipe> cached, @NotNull net.neoforged.neoforge.transfer.item.ItemResource stack) {
         if (cached != null) {
             CombinerRecipe cachedRecipe = cached.getRecipe();
-            return cachedRecipe.getMainInput().testType(stack) && (extraSlot.isEmpty() || cachedRecipe.getExtraInput().testType(extraSlot.getStack()));
+            return cachedRecipe.getMainInput().testType(stack) && (extraSlot.isEmpty() || cachedRecipe.getExtraInput().testType(extraSlot.resource()));
         }
         return false;
     }
 
     @Override
-    protected CombinerRecipe findRecipe(int process, @NotNull ItemStack fallbackInput, @NotNull IInventorySlot outputSlot, @Nullable IInventorySlot secondaryOutputSlot) {
+    protected CombinerRecipe findRecipe(int process, @NotNull net.neoforged.neoforge.transfer.item.ItemResource fallbackInput, @NotNull IInventorySlot outputSlot, @Nullable IInventorySlot secondaryOutputSlot) {
         // TODO: Give it something that is not empty when we don't have a stored secondary stack for getting the output?
-        return getRecipeType().getInputCache().findTypeBasedRecipe(level, fallbackInput, extraSlot.getStack(), outputSlot.getStack(), OUTPUT_CHECK);
+        return getRecipeType().getInputCache().findTypeBasedRecipe(level, fallbackInput, extraSlot.resource(), outputSlot.resource(), OUTPUT_CHECK);
     }
 
     @NotNull
@@ -126,7 +129,7 @@ public class TileEntityEMExtraCombiningFactory extends TileEntityEMExtraItemToIt
     @NotNull
     @Override
     public CachedRecipe<CombinerRecipe> createNewCachedRecipe(@NotNull CombinerRecipe recipe, int cacheIndex) {
-        return TwoInputCachedRecipe.combiner(recipe, recheckAllRecipeErrors[cacheIndex], inputHandlers[cacheIndex], extraInputHandler, outputHandlers[cacheIndex])
+        return new TwoInputCachedRecipe<>(recipe, recheckAllRecipeErrors[cacheIndex], inputHandlers[cacheIndex], extraInputHandler, outputHandlers[cacheIndex])
                 .setErrorsChanged(errors -> errorTracker.onErrorsChanged(errors, cacheIndex))
                 .setCanHolderFunction(this::canFunction)
                 .setActive(active -> setActiveState(active, cacheIndex))
@@ -138,12 +141,12 @@ public class TileEntityEMExtraCombiningFactory extends TileEntityEMExtraItemToIt
     }
 
     @Override
-    public void parseUpgradeData(HolderLookup.Provider provider, @NotNull IUpgradeData upgradeData) {
+// port-26.1.2: persistence and transaction signatures from ported factory.
+    public void parseUpgradeData(IUpgradeData upgradeData, HolderLookup.Provider provider, TransactionContext transaction) {
         if (upgradeData instanceof CombinerUpgradeData data) {
-            // Generic factory upgrade data handling
-            super.parseUpgradeData(provider, upgradeData);
-            // Copy the stack using NBT so that if it is not actually valid due to a reload we don't crash
-            extraSlot.deserializeNBT(provider, data.extraSlot.serializeNBT(provider));
+            //Generic factory upgrade data handling
+            super.parseUpgradeData(upgradeData, provider, transaction);
+            extraSlot.copyContents(data.extraSlot, transaction);
         } else {
             Mekanism.logger.warn("Unhandled upgrade data.", new Throwable());
         }
@@ -152,6 +155,6 @@ public class TileEntityEMExtraCombiningFactory extends TileEntityEMExtraItemToIt
     @NotNull
     @Override
     public CombinerUpgradeData getUpgradeData(HolderLookup.Provider provider) {
-        return new CombinerUpgradeData(provider, redstone, getControlType(), getEnergyContainer(), progress, energySlot, extraSlot, inputSlots, outputSlots, isSorting(), getComponents());
+        return new CombinerUpgradeData(provider, redstone, getControlType(), getEnergyContainer(), progress, energySlot, extraSlot, inputSlots, outputSlots, isSorting(), getComponents(), problemPath());
     }
 }

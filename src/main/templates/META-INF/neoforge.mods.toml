@@ -1,55 +1,67 @@
 modLoader = "javafml"
-loaderVersion = "[1,)"
+loaderVersion = "${loader_version_range}"
 license = "${mod_license}"
 
 [[mods]]
 modId = "${mod_id}"
 version = "${mod_version}"
 displayName = "${mod_name}"
-logoFile="logo.png"
+logoFile = "logo.png"
 authors = "${mod_authors}"
 description = '''${mod_description}'''
 
 [[mixins]]
-config="${mod_id}.mixins.json"
+config = "${mod_id}.mixins.json"
 
 [[accessTransformers]]
-file="META-INF/accesstransformer.cfg"
+file = "META-INF/accesstransformer.cfg"
 
-[[dependencies."${mod_id}"]]
+[[dependencies.${mod_id}]]
 modId = "neoforge"
 type = "required"
-versionRange = "${neo_version},)"
+versionRange = "${neo_version_range}"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "minecraft"
+type = "required"
+versionRange = "${minecraft_version_range}"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "mekanism"
+type = "required"
+versionRange = "${mekanism_version_range}"
 ordering = "AFTER"
 side = "BOTH"
 
-[[dependencies."${mod_id}"]]
-modId = "minecraft"
-type = "required"
-versionRange = "${minecraft_version},)"
-ordering = "AFTER"
-side = "BOTH"
-[[dependencies."${mod_id}"]]
-modId = "mekanism"
-type = "required"
-versionRange = "${mekanism_version},)"
-ordering = "AFTER"
-side = "BOTH"
-[[dependencies."${mod_id}"]]
+[[dependencies.${mod_id}]]
 modId = "evolvedmekanism"
 type = "required"
-versionRange = "[1.2.1,)"
+versionRange = "${evolvedmekanism_version_range}"
 ordering = "AFTER"
 side = "BOTH"
-[[dependencies."${mod_id}"]]
+
+[[dependencies.${mod_id}]]
 modId = "mekanism_extras"
 type = "required"
-versionRange = "[1.3.3,)"
+versionRange = "${mekanism_extras_version_range}"
 ordering = "AFTER"
 side = "BOTH"
-[[dependencies."${mod_id}"]]
+
+[[dependencies.${mod_id}]]
 modId = "mekmm"
 type = "optional"
-versionRange = "[1.3.1,)"
+versionRange = "${mekmm_version_range}"
 ordering = "AFTER"
 side = "BOTH"
+
+# port-26.1.2: MTO объявлен optional — миксин MixinMTOModClient помечен @Pseudo и без мода молча пропускается
+[[dependencies.${mod_id}]]
+modId = "mekanismtieredoutlines"
+type = "optional"
+versionRange = "${mto_version_range}"
+ordering = "AFTER"
+side = "CLIENT"
